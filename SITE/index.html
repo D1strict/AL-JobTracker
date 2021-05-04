@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <title>Login</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script>
+      function login()
+      {
+        alert("Login placeholder")
+      }
+
+        function havingT()
+        {
+            window.open("https://discord.com/invite/n6DWBnvqe3")
+        }
+        function goToMain() {
+            window.open("https://d1strict.de/al-home/")
+        }
+        function join() {
+            window.open("https://d1strict.de/al-apply-notice/")
+        }
+    </script>
+  </head>
+
+  <body>
+      <img src="logo.jpg" width="32px" height="32px" class="topRight" onclick="return goToMain();"> Ace Logistics Hub </img>
+      <div class="wrapper">
+          <form class="login">
+              <h1 class="LoginText">Log in to continue</h1>
+              <div class="dontHave" onclick="return join();"> Dont have an account yet? <br /> Join Ace Logistics! </div>
+              <div class="loginUser">
+                  <label for="username"></label>
+                  <input id="username" class="loginUser" type="text" placeholder="" required>
+              </div>
+              <div class="loginPswd">
+                  <label for="password"></label>
+                  <input id="password" class="loginPswd" type="password" placeholder="" required>
+              </div>
+              <div class="loginButton" onclick="return login();">
+                  <input id="loginButton" type="button" value="Login" class="loginButton">
+              </div>
+              <p class="havingTrouble" onclick="return havingT();">
+                  Having trouble logging in? Click here and join Ace Logistics discord server and open a
+                  support ticket.
+              </p>
+          </form>
+      </div>
+  </body>
+
+</html>
