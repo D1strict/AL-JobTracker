@@ -1,7 +1,7 @@
 # Welcome to Ace Logistics - Tracker 👋
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000)
 [![Documentation](https://img.shields.io/badge/documentation-yes-brightgreen.svg)](https://docs.d1strict.de/documentation/154-ace-logistics/?l=2)
-[![License: GPL 3.0](https://img.shields.io/badge/License-License-yellow.svg)](GPL 3.0)
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-yellow.svg)](GPL v3)
 
 > Euro Truck Simulator 2 and American Truck Simulator - Jobtracker for Ace Logistics.
 
