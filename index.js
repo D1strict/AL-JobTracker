@@ -5,8 +5,15 @@ etcars.enableDebug = true;
 const fs = require('fs');
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 request = new XMLHttpRequest();
-request.open("POST", 'https://api.d1strict.net/al/add/', true);
+request.open("POST", 'https://api.d1strict.net/add/', true);
 request.setRequestHeader('Content-Type', 'application/json');
+const notifier = require('node-notifier');
+notifier.notify({
+    title: 'Ace Logistics',
+    message: 'Ace Logistics Tracker Started!',
+    icon: "logo.jpg",
+    timeout: 1
+});
 
 etcars.on('data', function (data) {
     console.log('data received');
@@ -30,7 +37,6 @@ etcars.on('data', function (data) {
     var distanceDriven = data.jobData.distanceDriven;
     var timeDelivered = data.jobData.timeDelivered;
     var timeStarted = data.jobData.timeStarted;
-    var steamID = data.telemetry.user.steamID;
 
     var words = data;
     //console.log(words);
@@ -39,7 +45,7 @@ etcars.on('data', function (data) {
         JSON.stringify(words)
     );
 
-    request.open("POST", 'https://api.d1strict.net/al/add/', true);
+    request.open("POST", 'https://api.d1strict.net/add/', true);
     request.send(JSON.stringify({
         sourcecity: sourceCity,
         sourcecompany: sourceCompany,
@@ -60,12 +66,17 @@ etcars.on('data', function (data) {
         distancedriven: distanceDriven,
         timedelivered: timeDelivered,
         timestarted: timeStarted,
-        steamid: steamID
     }));
 });
 
 etcars.on('connect', function (data) {
     console.log('connected');
+    notifier.notify({
+        title: 'Ace Logistics',
+        message: 'Ace Logistics Tracker Initialized!',
+        icon: "logo.jpg",
+        timeout: 1
+    });
 });
 
 etcars.on('error', function (data) {
