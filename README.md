@@ -28,11 +28,11 @@ _Founder_
 ## 🤝 Contributing
 
 Contributions, issues and feature requests are welcome!
-Feel free to report issues to development@ace-logistics.uk. 
+Feel free to submit these topics to development@ace-logistics.uk. 
 
 
 ## 📝 License
 
 Copyright © 2021 [Ace Logistics](https://ace-logistics.uk/).
 
-This project is [GPL v3(https://github.com/D1strict/AL-JobTracker/blob/main/LICENSE) licensed.
+This project is under [GPL v3](https://github.com/D1strict/AL-JobTracker/blob/main/LICENSE) licensed.
