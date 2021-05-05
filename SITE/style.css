@@ -28,6 +28,9 @@ div.wrapper {
     transform: translateY(-50%);
     font-size: 10pt;
 }
+div.menuwrap {
+
+}
 
 form.login h1.LoginText {
     padding-bottom: 50px;
@@ -105,103 +108,290 @@ form.login logoText{
 form.login input.loginButton:hover {
     cursor: pointer;
 }
+
+
+
+
+
+
+
+form.main div.generalText {
+    color: #102655;
+    background-color: #f4e022;
+    margin-left: 20px;
+    width: 120px;
+    text-align: center;
+    font-size: 20px;
+    height: 30px;
+}
+form.main div.meText {
+    color: #102655;
+    background-color: #f4e022;
+    width: 120px;
+    margin-left: 20px;
+    text-align: center;
+    font-size: 20px;
+    height: 30px;
+}
+form.main div.essentialsText {
+    color: #102655;
+    background-color: #f4e022;
+    width: 120px;
+    margin-left: 20px;
+    text-align: center;
+    font-size: 20px;
+    height: 30px;
+}
+form.main div.adminText {
+    color: #102655;
+    background-color: #f4e022;
+    width: 120px;
+    margin-left: 20px;
+    text-align: center;
+    font-size: 20px;
+    height: 30px;
+
+}
+form.main div.userText {
+    color: #102655;
+    background-color: #f4e022;
+    width: 120px;
+    margin-left: 20px;
+    padding-bottom: 20px;
+    text-align: center;
+    font-size: 20px;
+    height: 30px;
+    text-align: center;
+    transform: translateY(600%);
+    font-size: 10pt;
+}
+
+
+
+
+
+
+
+
+
 form.main input.dashboard {
-    color: #102655;
-    background-color: #f4e022;
-    width: 80px;
-    height: 40px;
-    border: none;
-}
-form.main input.leaderboards {
-    color: #102655;
-    background-color: #f4e022;
-    width: 150px;
-    height: 40px;
-    border: none;
-}
-form.main input.deliveries {
-    color: #102655;
+    color: #f4e022;
     background-color: #102655;
     width: 150px;
     height: 40px;
     border: none;
+    font-size: 15px;
 }
+form.main div.dashboard {
+    width: 150px;
+    height: 40px;
+}
+form.main input.dashboard:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+
+
+
+form.main input.leaderboards {
+    color: #f4e022;
+    background-color: #102655;
+    width: 150px;
+    height: 40px;
+    border: none;
+    font-size: 15px;
+}
+form.main input.leaderboards:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.leaderboards {
+    width: 150px;
+    height: 40px;
+}
+
+
+
+form.main input.deliveries {
+    color: #f4e022;
+    background-color: #102655;
+    width: 150px;
+    height: 40px;
+    border: none;
+    font-size: 15px;
+}
+form.main input.deliveries:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.deliveries {
+    width: 150px;
+    height: 40px;
+}
+
+
+
 form.main input.convoys {
     color: #f4e022;
     background-color: #102655;
     width: 150px;
     height: 40px;
     border: none;
+    font-size: 15px;
 }
+form.main input.convoys:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.convoys {
+    width: 150px;
+    height: 40px;
+}
+
+
+
 form.main input.statistics {
-    color: #102655;
-    background-color: #f4e022;
-    width: 150px;
-    height: 40px;
-    border: none;
-}
-form.main input.mydeliveries {
-    color: #102655;
-    background-color: #f4e022;
-    width: 150px;
-    height: 40px;
-    border: none;
-}
-form.main input.submitdelivery {
-    color: #102655;
-    background-color: #f4e022;
-    width: 150px;
-    height: 40px;
-    border: none;
-}form.main input.dashboard{
- color: #102655;
-	background-color: #f4e022;
-	width: 150px;
-	height: 40px;	
-  border: none;
-}
-form.main input.tracker {
-    color: #102655;
-    background-color: #f4e022;
-    width: 150px;
-    height: 40px;
-    border: none;
-}
-form.main input.guides {
-    color: #102655;
+    color: #f4e022;
     background-color: #102655;
     width: 150px;
     height: 40px;
     border: none;
+    font-size: 15px;
 }
+form.main input.statistics:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.statistics {
+    width: 150px;
+    height: 40px;
+}
+
+
+
+form.main input.mydeliveries {
+    color: #f4e022;
+    background-color: #102655;
+    width: 150px;
+    height: 40px;
+    border: none;
+    font-size: 15px;
+}
+form.main input.mydeliveries:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.deliveries {
+    width: 150px;
+    height: 40px;
+}
+
+
+
+form.main input.submitdelivery {
+    color: #f4e022;
+    background-color: #102655;
+    width: 150px;
+    height: 40px;
+    border: none;
+    font-size: 15px;
+}
+form.main input.submitdelivery:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.submitdelivery {
+    width: 150px;
+    height: 40px;
+}
+
+
+
+form.main input.tracker {
+    color: #f4e022;
+    background-color: #102655;
+    width: 150px;
+    height: 40px;
+    border: none;
+    font-size: 15px;
+}
+form.main input.tracker:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.tracker {
+    width: 150px;
+    height: 40px;
+}
+
+
+
+form.main input.guides {
+    color: #f4e022;
+    background-color: #102655;
+    width: 150px;
+    height: 40px;
+    border: none;
+    font-size: 15px;
+}
+form.main input.guides:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.guides {
+    width: 150px;
+    height: 40px;
+}
+
+
+
 form.main input.downloads {
-    color: #102655;
-    background-color: #f4e022;
+    color: #f4e022;
+    background-color: #102655;
     width: 150px;
     height: 40px;
     border: none;
+    font-size: 15px;
 }
+form.main input.downloads:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
+}
+form.main div.downloads {
+    width: 150px;
+    height: 40px;
+}
+
+
+
 form.main input.manageusr {
-    color: #102655;
-    background-color: #f4e022;
+    color: #f4e022;
+    background-color: #102655;
     width: 150px;
     height: 40px;
     border: none;
+    font-size: 15px;
 }
-div.menuwrap {
-    vertical-align: unset;
-    text-align: center;
-    display: flex;
-    justify-content: left;
-    align-items: unset;
-    background: #102655;
-    padding-top: 50px;
-    padding-bottom: 50px;
-    width: 100%;
-    position: absolute;
-    top: 50%;
-    -webkit-transform: translateY(-50%);
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
-    font-size: 10pt;
+form.main input.manageusr:hover {
+    cursor: pointer;
+    color: #102655;
+    background-color: #f4e022;
 }
+form.main div.manageusr {
+    width: 150px;
+    height: 40px;
+}
+
+
+
+
