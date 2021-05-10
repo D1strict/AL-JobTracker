@@ -88,27 +88,22 @@ request.onload = function () {
         });
         console.log("API connection successful:");
         console.log(this.responseText);
-        apistatus = "true";
+        apistatus = "false";
     }
-    else if (retrys < 10) {
+    else if (retryCount < 10) {
         retryCount = retryCount + 1;
         console.log("API-Connection failed. Please check your internet connection! Retry: "+retryCount+"");
     } else if (retryCount > 9) {
         console.log("API-Connection failed. Please check your internet connection! Cancelled.");
-        let filename = Math.random().toString(36).substring(7);
         notifier.notify({
             title: 'Ace Logistics',
-            message: 'API-Connection failed. Job-Data saved into'+filename+'.json.',
+            message: 'API-Connection failed.',
             icon: "logo.png",
             timeout: 1,
             appID: "Ace Logistics - JobTracker"
         });
         retryCount = 0;
-        apistatus = "true";
-        console.log("Job-Data saved into "+filename+".json");
-        fs.writeFile(''+filename+'.json', JSON.stringify(words), function (err) {
-            if (err) throw err;
-        });
+        apistatus = "false";
     }
 };
  
