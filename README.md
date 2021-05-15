@@ -14,7 +14,7 @@ _Projectmanager_
 * Website: https://homiadam07.wixsite.com/adystudios
 * Github: [@AdyStudios](https://github.com/AdyStudios)
 
-👤 **D1strict-Development/Felix | D1strict**
+👤 **D1strict-Development**
 _Developer_
 * Website: https://d1strict.de/development-home/
 * Github: [@D1strict](https://github.com/D1strict)
