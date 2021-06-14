@@ -11,14 +11,14 @@ var updateserver = new XMLHttpRequest();
 const http = require('http');
 const rp = require('request-promise');
 var open = require('open');
- 
+
 // Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
 var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 1; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
- 
+
 etcars.on('data', function(data) {
     if (devmode == 1) {
         console.log('Data received.');
@@ -44,7 +44,7 @@ etcars.on('data', function(data) {
     var currentFuel = data.telemetry.truck.fuel.currentLitres; /* Current fuel in l */
     map.open('POST', 'https://api.d1strict.net/al/v2/map', true); /* Open the request to the Map API. */
     map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
-    map.send('x='+truckPositionX+'&y='+truckPositionY+'&z='+truckPositionZ+'&isDriving='+isDriving+'&isPaused='+isPaused+'&jobRemainingTime='+jobRemainingTime+'&steamID='+steamID+'&steamUsername='+steamUsername+'&currentSpeed='+currentSpeed+'&currentDestination='+currentJobDestination+'&eta='+eta+'&currentFuel='+currentFuel+'&currentSource='+currentJobSource+'&gameID='+gameID+'&truckMake='+truckMake+'&truckModel='+truckModel+''); /* Sends data to the Map API. */
+    map.send('x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + ''); /* Sends data to the Map API. */
     if (devmode == 1) {
         console.log('Position sent to the Map-API.');
     }
@@ -87,14 +87,14 @@ etcars.on('data', function(data) {
         if (devmode == 1) {
             console.log('Job finished, Connecting...');
         }
-        request.send('isMultiplayer='+isMultiplayer+'&gameID='+gameID+'&gameName='+gameName+'&truckMake='+truckMake+'&truckModel='+truckModel+'&jobStatus='+jobStatus+'&jobCargo='+jobCargo+'&jobCargoID='+jobCargoID+'&jobMass='+jobMass+'&jobExIncome='+jobExIncome+'&jobSourceCity='+jobSourceCity+'&jobSourceCityID='+jobSourceCityID+'&jobSourceCompany='+jobSourceCompany+'&jobSourceCompanyID='+jobsourceCompanyID+'&jobDestinationCity='+jobDestinationCity+'&jobDestinationCityID='+jobDestinationCityID+'&jobDestinationCompany='+jobDestinationCompany+'&jobDestinationCompanyID='+jobDestinationCompanyID+'&isLate='+jobIsLate+'&jobFineSpeeding='+jobFineSpeeding+'&jobDistanceDriven='+jobDistanceDriven+'&jobFuelBurned='+jobFuelBurned+'&jobFuelPurchased='+jobFuelPurchased+'&jobFineCollisions='+jobFineCollisions+'&jobTrailerStartDamage='+jobTrailerStartDamage+'&jobTrailerFinishDamage='+jobTrailerFinishDamage+'&jobEngineStartDamage='+jobEngineStartDamage+'&jobEngineFinishDamage='+jobEngineFinishDamage+'&jobTransmissionStartDamage='+jobTransmissionStartDamage+'&jobTransmissionFinishDamage='+jobTransmissionFinishDamage+'&jobCabinStartDamage='+jobCabinStartDamage+'&jobCabinFinishDamage='+jobCabinFinishDamage+'&jobChassisStartDamage='+jobChassisStartDamage+'&jobChassisFinishDamage='+jobChassisFinishDamage+'&jobWheelStartDamage='+jobWheelStartDamage+'&jobWheelFinishDamage='+jobWheelFinishDamage+'&jobRealTimeStarted='+jobRealTimeStarted+'&jobRealTimeTaken='+jobRealTimeTaken+'&jobRealTimeEnded='+jobRealTimeEnded+'&steamID='+steamID+'&steamUsername='+steamUsername+''); /* Sends data to the Map API. */
+        request.send('isMultiplayer=' + isMultiplayer + '&gameID=' + gameID + '&gameName=' + gameName + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&jobStatus=' + jobStatus + '&jobCargo=' + jobCargo + '&jobCargoID=' + jobCargoID + '&jobMass=' + jobMass + '&jobExIncome=' + jobExIncome + '&jobSourceCity=' + jobSourceCity + '&jobSourceCityID=' + jobSourceCityID + '&jobSourceCompany=' + jobSourceCompany + '&jobSourceCompanyID=' + jobsourceCompanyID + '&jobDestinationCity=' + jobDestinationCity + '&jobDestinationCityID=' + jobDestinationCityID + '&jobDestinationCompany=' + jobDestinationCompany + '&jobDestinationCompanyID=' + jobDestinationCompanyID + '&isLate=' + jobIsLate + '&jobFineSpeeding=' + jobFineSpeeding + '&jobDistanceDriven=' + jobDistanceDriven + '&jobFuelBurned=' + jobFuelBurned + '&jobFuelPurchased=' + jobFuelPurchased + '&jobFineCollisions=' + jobFineCollisions + '&jobTrailerStartDamage=' + jobTrailerStartDamage + '&jobTrailerFinishDamage=' + jobTrailerFinishDamage + '&jobEngineStartDamage=' + jobEngineStartDamage + '&jobEngineFinishDamage=' + jobEngineFinishDamage + '&jobTransmissionStartDamage=' + jobTransmissionStartDamage + '&jobTransmissionFinishDamage=' + jobTransmissionFinishDamage + '&jobCabinStartDamage=' + jobCabinStartDamage + '&jobCabinFinishDamage=' + jobCabinFinishDamage + '&jobChassisStartDamage=' + jobChassisStartDamage + '&jobChassisFinishDamage=' + jobChassisFinishDamage + '&jobWheelStartDamage=' + jobWheelStartDamage + '&jobWheelFinishDamage=' + jobWheelFinishDamage + '&jobRealTimeStarted=' + jobRealTimeStarted + '&jobRealTimeTaken=' + jobRealTimeTaken + '&jobRealTimeEnded=' + jobRealTimeEnded + '&steamID=' + steamID + '&steamUsername=' + steamUsername + ''); /* Sends data to the Map API. */
     } else if ((jobStatus == "1") && (apistatus == "false")) {
-       apistatus = "true";
+        apistatus = "true";
     }
 });
 
-request.onload = function () {
-    if(this.status === 200){
+request.onload = function() {
+    if (this.status === 200) {
         notifier.notify({
             title: 'Ace Logistics',
             message: 'Info: Job submitted.',
@@ -109,11 +109,10 @@ request.onload = function () {
             console.log(this.responseText);
         }
         apistatus = "false";
-    }
-    else if (retryCount < 10) {
+    } else if (retryCount < 10) {
         retryCount = retryCount + 1;
         if (devmode == 1) {
-            console.log("API-Connection failed. Please check your internet connection! Retry: "+retryCount+"");
+            console.log("API-Connection failed. Please check your internet connection! Retry: " + retryCount + "");
         }
     } else if (retryCount > 9) {
         if (devmode == 1) {
@@ -127,14 +126,14 @@ request.onload = function () {
             appID: "Ace Logistics - JobTracker",
             sound: true,
             wait: true
-          }, function () {
+        }, function() {
             open('https://d1strict.de/form-user-response/10-submit-a-job/');
-          });
+        });
         retryCount = 0;
         apistatus = "false";
     }
 };
- 
+
 etcars.on('connect', function(data) {
     retryCount = 0;
     apistatus = "false";
@@ -142,7 +141,7 @@ etcars.on('connect', function(data) {
         console.log('connected');
     }
 });
- 
+
 etcars.on('error', function(data) {
     if (devmode == 1) {
         console.log('etcars error');
@@ -154,21 +153,23 @@ rp({
     uri: `http://localhost:${AlTPort}${AlTPath}`,
     resolveWithFullResponse: true
 }).then(res => {
-   if (res.statusCode === 200) {
-      notifier.notify({
-        title: 'Ace Logistics',
-        message: 'Error: Tracker could not be started, it is already running.',
-        icon: "logo.png",
-        timeout: 1,
-        appID: "Ace Logistics - JobTracker",
-        sound: true,
-        wait: false
-      });
-      setTimeout(() => {  process.exit(1); }, 3000);
-   } else {
+    if (res.statusCode === 200) {
+        notifier.notify({
+            title: 'Ace Logistics',
+            message: 'Error: Tracker could not be started, it is already running.',
+            icon: "logo.png",
+            timeout: 1,
+            appID: "Ace Logistics - JobTracker",
+            sound: true,
+            wait: false
+        });
+        setTimeout(() => {
+            process.exit(1);
+        }, 3000);
+    } else {
 
-      throw new Error(`statusCode ${res.statusCode}`)
-   }
+        throw new Error(`statusCode ${res.statusCode}`)
+    }
 }).catch(err => {
     // our process is not already running
     // start our own copy of the Testserver
@@ -209,20 +210,20 @@ rp({
 
 updateserver.open("GET", "https://api.d1strict/al/v2/appversion.txt");
 updateserver.send();
-updateserver.onreadystatechange=function(){
-  if(this.readyState==4 && this.status==200){ 
-    if (updateserver.responseText > version){
-        notifier.notify({
-            title: 'Ace Logistics',
-            message: 'Info: Tracker started.',
-            icon: "logo.png",
-            timeout: 1,
-            appID: "Ace Logistics - JobTracker",
-            sound: true,
-            wait: true
-          }, function () {
-            open('https://discord.gg/WrMg4CmVve');
-          });
+updateserver.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+        if (updateserver.responseText > version) {
+            notifier.notify({
+                title: 'Ace Logistics',
+                message: 'Info: Tracker started.',
+                icon: "logo.png",
+                timeout: 1,
+                appID: "Ace Logistics - JobTracker",
+                sound: true,
+                wait: true
+            }, function() {
+                open('https://discord.gg/WrMg4CmVve');
+            });
+        }
     }
-  }  
 }
