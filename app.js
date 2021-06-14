@@ -215,7 +215,7 @@ updateserver.onreadystatechange = function() {
         if (updateserver.responseText > version) {
             notifier.notify({
                 title: 'Ace Logistics',
-                message: 'Info: Tracker started.',
+                message: 'Info: Update available.',
                 icon: "logo.png",
                 timeout: 1,
                 appID: "Ace Logistics - JobTracker",
