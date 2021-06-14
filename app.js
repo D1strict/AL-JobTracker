@@ -6,6 +6,7 @@ const fs = require('fs');
 var etcars = new ETCarsClient();
 var request = new XMLHttpRequest();
 var map = new XMLHttpRequest();
+var updateserver = new XMLHttpRequest();
  
 // to enable debug console.log and console.error
 etcars.enableDebug = false;
@@ -125,3 +126,20 @@ notifier.notify({
     timeout: 1,
     appID: "Ace Logistics - JobTracker"
 });
+
+
+updateserver.open("GET", "https://api.d1strict/al/v2/appversion.txt");
+updateserver.send();
+updateserver.onreadystatechange=function(){
+  if(this.readyState==4 && this.status==200){ 
+    if (updateserver.responseText > version){
+        notifier.notify({
+            title: 'Ace Logistics',
+            message: 'Update available.',
+            icon: "logo.png",
+            timeout: 1,
+            appID: "Ace Logistics - JobTracker"
+        });
+    }
+  }  
+}
