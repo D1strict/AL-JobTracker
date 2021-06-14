@@ -7,6 +7,10 @@ var etcars = new ETCarsClient();
 var request = new XMLHttpRequest();
 var map = new XMLHttpRequest();
 var updateserver = new XMLHttpRequest();
+const AlTPort = 10853;
+const AlTPath = '/AlT';
+const http = require('http');
+const rp = require('request-promise');
  
 // to enable debug console.log and console.error
 etcars.enableDebug = false;
@@ -117,14 +121,53 @@ etcars.on('connect', function(data) {
 etcars.on('error', function(data) {
     console.log('etcars error');
 });
- 
-etcars.connect();
-notifier.notify({
-    title: 'Ace Logistics',
-    message: 'Tracker started.',
-    icon: "logo.png",
-    timeout: 1,
-    appID: "Ace Logistics - JobTracker"
+
+// Process-Checking (is it running already)
+rp({
+    uri: `http://localhost:${AlTPort}${AlTPath}`,
+    resolveWithFullResponse: true
+}).then(res => {
+   if (res.statusCode === 200) {
+      notifier.notify({
+        title: 'Ace Logistics',
+        message: 'Error: Tracker could not be started, it is already running.',
+        icon: "logo.png",
+        timeout: 1,
+        appID: "Ace Logistics - JobTracker"
+      });
+      process.exit(1);
+   } else {
+
+      throw new Error(`statusCode ${res.statusCode}`)
+   }
+}).catch(err => {
+    // our process is not already running
+    // start our own copy of the Testserver
+    const server = http.createServer((req, res) => {
+        if (req.url === AlTPath) {
+            res.statusCode = 200;
+            res.end("ok");
+        } else {
+            res.statusCode = 404;
+            res.end("err");
+        }
+    });
+    server.listen(AlTPort);
+    server.unref();
+
+    // proceed with the rest of your process initialization here
+    console.log("Our server not already running, so we can now start ours");
+    etcars.connect();
+    notifier.notify({
+        title: 'Ace Logistics',
+        message: 'Tracker started.',
+        icon: "logo.png",
+        timeout: 1,
+        appID: "Ace Logistics - JobTracker"
+    });
+    setInterval(() => {
+        console.log("still running");
+    }, 1000);
 });
 
 
