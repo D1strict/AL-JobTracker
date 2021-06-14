@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "etcars-node-client": "^1.0.4",
+    "node-notifier": "^10.0.0",
+    "open": "^8.2.0",
+    "path": "^0.12.7",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6",
+    "xmlhttprequest": "^1.8.0"
+  }
+}
