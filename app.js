@@ -324,7 +324,27 @@ function UpdateApplication() {
 				}, function() {
 					open('https://discord.gg/WrMg4CmVve');
 				});
+			} else {
+				notifier.notify({
+					title: 'Ace Logistics',
+					message: 'Success: The JobTracker is up to date.',
+					icon: "./src/media/success.png",
+					timeout: 1,
+					appID: "Ace Logistics - JobTracker",
+					sound: true,
+					wait: true
+				});
 			}
+		} else if (this.status != 200) {
+			notifier.notify({
+				title: 'Ace Logistics',
+				message: 'Error: The update check cannot be performed. Try again later.',
+				icon: "./src/media/error.png",
+				timeout: 1,
+				appID: "Ace Logistics - JobTracker",
+				sound: true,
+				wait: true
+			});
 		}
 	}
 }
