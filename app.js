@@ -75,7 +75,7 @@ rp({
 	}
 });
 /* Update-Check */
-updateserver.open("GET", "https://api.d1strict/al/v2/appversion.txt");
+updateserver.open("GET", "https://api.d1strict.net/al/v2/appversion.txt");
 updateserver.send();
 updateserver.onreadystatechange = function() {
 	if (this.readyState == 4 && this.status == 200) {
@@ -163,7 +163,9 @@ etcars.on('data', function(data) {
 		if (devmode == 1) {
 			console.log('Job finished, Connecting...');
 		}
-		request.send('isMultiplayer=' + isMultiplayer + '&gameID=' + gameID + '&gameName=' + gameName + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&jobStatus=' + jobStatus + '&jobCargo=' + jobCargo + '&jobCargoID=' + jobCargoID + '&jobMass=' + jobMass + '&jobExIncome=' + jobExIncome + '&jobSourceCity=' + jobSourceCity + '&jobSourceCityID=' + jobSourceCityID + '&jobSourceCompany=' + jobSourceCompany + '&jobSourceCompanyID=' + jobsourceCompanyID + '&jobDestinationCity=' + jobDestinationCity + '&jobDestinationCityID=' + jobDestinationCityID + '&jobDestinationCompany=' + jobDestinationCompany + '&jobDestinationCompanyID=' + jobDestinationCompanyID + '&isLate=' + jobIsLate + '&jobFineSpeeding=' + jobFineSpeeding + '&jobDistanceDriven=' + jobDistanceDriven + '&jobFuelBurned=' + jobFuelBurned + '&jobFuelPurchased=' + jobFuelPurchased + '&jobFineCollisions=' + jobFineCollisions + '&jobTrailerStartDamage=' + jobTrailerStartDamage + '&jobTrailerFinishDamage=' + jobTrailerFinishDamage + '&jobEngineStartDamage=' + jobEngineStartDamage + '&jobEngineFinishDamage=' + jobEngineFinishDamage + '&jobTransmissionStartDamage=' + jobTransmissionStartDamage + '&jobTransmissionFinishDamage=' + jobTransmissionFinishDamage + '&jobCabinStartDamage=' + jobCabinStartDamage + '&jobCabinFinishDamage=' + jobCabinFinishDamage + '&jobChassisStartDamage=' + jobChassisStartDamage + '&jobChassisFinishDamage=' + jobChassisFinishDamage + '&jobWheelStartDamage=' + jobWheelStartDamage + '&jobWheelFinishDamage=' + jobWheelFinishDamage + '&jobRealTimeStarted=' + jobRealTimeStarted + '&jobRealTimeTaken=' + jobRealTimeTaken + '&jobRealTimeEnded=' + jobRealTimeEnded + '&steamID=' + steamID + '&steamUsername=' + steamUsername + ''); /* Sends data to the Map API. */
+		var data = fs.readFileSync('./apikey.txt', 'utf8');
+    	console.log(data.toString());  
+		request.send('isMultiplayer=' + isMultiplayer + '&gameID=' + gameID + '&gameName=' + gameName + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&jobStatus=' + jobStatus + '&jobCargo=' + jobCargo + '&jobCargoID=' + jobCargoID + '&jobMass=' + jobMass + '&jobExIncome=' + jobExIncome + '&jobSourceCity=' + jobSourceCity + '&jobSourceCityID=' + jobSourceCityID + '&jobSourceCompany=' + jobSourceCompany + '&jobSourceCompanyID=' + jobsourceCompanyID + '&jobDestinationCity=' + jobDestinationCity + '&jobDestinationCityID=' + jobDestinationCityID + '&jobDestinationCompany=' + jobDestinationCompany + '&jobDestinationCompanyID=' + jobDestinationCompanyID + '&isLate=' + jobIsLate + '&jobFineSpeeding=' + jobFineSpeeding + '&jobDistanceDriven=' + jobDistanceDriven + '&jobFuelBurned=' + jobFuelBurned + '&jobFuelPurchased=' + jobFuelPurchased + '&jobFineCollisions=' + jobFineCollisions + '&jobTrailerStartDamage=' + jobTrailerStartDamage + '&jobTrailerFinishDamage=' + jobTrailerFinishDamage + '&jobEngineStartDamage=' + jobEngineStartDamage + '&jobEngineFinishDamage=' + jobEngineFinishDamage + '&jobTransmissionStartDamage=' + jobTransmissionStartDamage + '&jobTransmissionFinishDamage=' + jobTransmissionFinishDamage + '&jobCabinStartDamage=' + jobCabinStartDamage + '&jobCabinFinishDamage=' + jobCabinFinishDamage + '&jobChassisStartDamage=' + jobChassisStartDamage + '&jobChassisFinishDamage=' + jobChassisFinishDamage + '&jobWheelStartDamage=' + jobWheelStartDamage + '&jobWheelFinishDamage=' + jobWheelFinishDamage + '&jobRealTimeStarted=' + jobRealTimeStarted + '&jobRealTimeTaken=' + jobRealTimeTaken + '&jobRealTimeEnded=' + jobRealTimeEnded + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&apikey=' + data.toString() + ''); /* Sends data to the Map API. */
 	} else if ((jobStatus == "1") && (apistatus == "false")) {
 		apistatus = "true";
 	}
@@ -240,6 +242,11 @@ const AceLogistcsMenu = {
 			checked: false,
 			enabled: true
 		},
+		{
+			title: 'Check for Updates',
+			checked: false,
+			enabled: true
+		},
 	]
 }
 const RestartTrackerButton = {
@@ -258,6 +265,14 @@ const ExitTrackerButton = {
 		ExitApplication();
 	}
 }
+const UpdateTrackerButton = {
+	title: 'Check for Updates',
+	checked: false,
+	enabled: true,
+	click: () => {
+		UpdateApplication();
+	}
+}
 const systray = new SysTray({
 	menu: {
 		// you should use .png icon on macOS/Linux, and .ico format on Windows */
@@ -267,6 +282,7 @@ const systray = new SysTray({
 		items: [
 			AceLogistcsMenu,
 			RestartTrackerButton,
+			UpdateTrackerButton,
 			ExitTrackerButton
 		]
 	},
@@ -289,6 +305,28 @@ function ExitApplication() {
 		process.exit(1);
 		systray.kill();
 	}, 1000);
+}
+
+function UpdateApplication() {
+	updateserver.open("GET", "https://api.d1strict.net/al/v2/appversion.txt");
+	updateserver.send();
+	updateserver.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			if (updateserver.responseText > version) {
+				notifier.notify({
+					title: 'Ace Logistics',
+					message: 'Info: Update available.',
+					icon: "./src/media/info.png",
+					timeout: 1,
+					appID: "Ace Logistics - JobTracker",
+					sound: true,
+					wait: true
+				}, function() {
+					open('https://discord.gg/WrMg4CmVve');
+				});
+			}
+		}
+	}
 }
 
 function RestartApplication() {
