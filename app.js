@@ -244,7 +244,7 @@ const AceLogistcsMenu = {
 			checked: false,
 			enabled: true
 		},
-		//Deleted bc we don't need two check for updates  ¯\_(ツ)_/¯
+		
 	]
 }
 const RestartTrackerButton = {
@@ -332,7 +332,7 @@ function UpdateApplication() {
 					wait: true
 				});
 			}
-		} else if (this.status != 200) {
+		} else if (this.readyState == 4 && this.status != 200) {
 			notifier.notify({
 				title: 'Ace Logistics',
 				message: 'Error: The update check cannot be performed. Try again later.',
