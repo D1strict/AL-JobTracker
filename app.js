@@ -1,4 +1,4 @@
-/* Dependencies */
+﻿/* Dependencies */
 var ETCarsClient = require('etcars-node-client');
 const notifier = require('node-notifier');
 const path = require('path');
@@ -82,18 +82,20 @@ updateserver.onreadystatechange = function() {
 		if (updateserver.responseText > version) {
 			notifier.notify({
 				title: 'Ace Logistics',
-				message: 'Info: Update available.',
+				message: 'Info: Update available. Discord will be opened soon, you can open a support ticket there to update the tracker.',
 				icon: "./src/media/info.png",
 				timeout: 1,
 				appID: "Ace Logistics - JobTracker",
 				sound: true,
 				wait: true
-			}, function() {
+			}, 
+			function() {
 				open('https://discord.gg/WrMg4CmVve');
 			});
 		}
 	}
 }
+
 /* Ingame-Data */
 etcars.on('data', function(data) {
 	if (devmode == 1) {
@@ -242,11 +244,7 @@ const AceLogistcsMenu = {
 			checked: false,
 			enabled: true
 		},
-		{
-			title: 'Check for Updates',
-			checked: false,
-			enabled: true
-		},
+		//Deleted bc we don't need two check for updates  ¯\_(ツ)_/¯
 	]
 }
 const RestartTrackerButton = {
@@ -291,7 +289,6 @@ const systray = new SysTray({
 })
 //Functions */
 function ExitApplication() {
-	// Doesn't appears 
 	notifier.notify({
 		title: 'Ace Logistics',
 		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the JobTracker again.',
