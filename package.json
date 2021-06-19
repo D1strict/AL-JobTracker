@@ -1,11 +1,13 @@
 {
   "dependencies": {
     "etcars-node-client": "^1.0.4",
+    "exit-hook": "^2.2.1",
     "node-notifier": "^10.0.0",
     "open": "^8.2.0",
-    "path": "^0.12.7",
+    "os": "^0.1.1",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
+    "systray2": "^2.1.2",
     "xmlhttprequest": "^1.8.0"
   }
 }
