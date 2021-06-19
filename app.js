@@ -13,6 +13,8 @@ const rp = require('request-promise');
 var open = require('open');
 const SysTray = require('systray2').default;
 const os = require('os');
+var exec = require('child_process').execFile;
+
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
 var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
@@ -28,7 +30,7 @@ rp({
 		notifier.notify({
 			title: 'Ace Logistics',
 			message: 'Error: Tracker could not be started, it is already running.',
-			icon: "./src/media/error.png",
+			icon: "./assets/error.png",
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
@@ -62,12 +64,34 @@ rp({
 	notifier.notify({
 		title: 'Ace Logistics',
 		message: 'Info: Tracker started.',
-		icon: "./src/media/info.png",
+		icon: "./assets/info.png",
 		timeout: 1,
 		appID: "Ace Logistics - JobTracker",
 		sound: true,
 		wait: false
 	});
+	if (os.arch() == "x32") {
+		exec('RebootDRP_x86.exe', function(err, data) {  
+			if (devmode == 1) {
+				console.log(err)
+				console.log(data.toString());                       
+			}
+		});  
+	} else if (os.arch() == "x64") {
+		exec('RebootDRP_x64.exe', function(err, data) {  
+			if (devmode == 1) {
+				console.log(err)
+				console.log(data.toString());                       
+			}
+		});  
+	} else {
+		exec('RebootDRP_x86.exe', function(err, data) {  
+			if (devmode == 1) {
+				console.log(err)
+				console.log(data.toString());                       
+			}
+		});  
+	}
 	if (devmode == 1) {
 		setInterval(() => {
 			console.log("still running");
@@ -83,7 +107,7 @@ updateserver.onreadystatechange = function() {
 			notifier.notify({
 				title: 'Ace Logistics',
 				message: 'Info: Update available. Discord will be opened soon, you can open a support ticket there to update the tracker.',
-				icon: "./src/media/info.png",
+				icon: "./assets/info.png",
 				timeout: 1,
 				appID: "Ace Logistics - JobTracker",
 				sound: true,
@@ -166,7 +190,9 @@ etcars.on('data', function(data) {
 			console.log('Job finished, Connecting...');
 		}
 		var data = fs.readFileSync('./apikey.txt', 'utf8');
-    	console.log(data.toString());  
+		if (devmode == 1) {
+    		console.log('Authentication with API key:' + data.toString() + '');  
+		}
 		request.send('isMultiplayer=' + isMultiplayer + '&gameID=' + gameID + '&gameName=' + gameName + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&jobStatus=' + jobStatus + '&jobCargo=' + jobCargo + '&jobCargoID=' + jobCargoID + '&jobMass=' + jobMass + '&jobExIncome=' + jobExIncome + '&jobSourceCity=' + jobSourceCity + '&jobSourceCityID=' + jobSourceCityID + '&jobSourceCompany=' + jobSourceCompany + '&jobSourceCompanyID=' + jobsourceCompanyID + '&jobDestinationCity=' + jobDestinationCity + '&jobDestinationCityID=' + jobDestinationCityID + '&jobDestinationCompany=' + jobDestinationCompany + '&jobDestinationCompanyID=' + jobDestinationCompanyID + '&isLate=' + jobIsLate + '&jobFineSpeeding=' + jobFineSpeeding + '&jobDistanceDriven=' + jobDistanceDriven + '&jobFuelBurned=' + jobFuelBurned + '&jobFuelPurchased=' + jobFuelPurchased + '&jobFineCollisions=' + jobFineCollisions + '&jobTrailerStartDamage=' + jobTrailerStartDamage + '&jobTrailerFinishDamage=' + jobTrailerFinishDamage + '&jobEngineStartDamage=' + jobEngineStartDamage + '&jobEngineFinishDamage=' + jobEngineFinishDamage + '&jobTransmissionStartDamage=' + jobTransmissionStartDamage + '&jobTransmissionFinishDamage=' + jobTransmissionFinishDamage + '&jobCabinStartDamage=' + jobCabinStartDamage + '&jobCabinFinishDamage=' + jobCabinFinishDamage + '&jobChassisStartDamage=' + jobChassisStartDamage + '&jobChassisFinishDamage=' + jobChassisFinishDamage + '&jobWheelStartDamage=' + jobWheelStartDamage + '&jobWheelFinishDamage=' + jobWheelFinishDamage + '&jobRealTimeStarted=' + jobRealTimeStarted + '&jobRealTimeTaken=' + jobRealTimeTaken + '&jobRealTimeEnded=' + jobRealTimeEnded + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&apikey=' + data.toString() + ''); /* Sends data to the Map API. */
 	} else if ((jobStatus == "1") && (apistatus == "false")) {
 		apistatus = "true";
@@ -177,7 +203,7 @@ request.onload = function() {
 		notifier.notify({
 			title: 'Ace Logistics',
 			message: 'Info: Job submitted.',
-			icon: "./src/media/success.png",
+			icon: "./assets/success.png",
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
@@ -200,7 +226,7 @@ request.onload = function() {
 		notifier.notify({
 			title: 'Ace Logistics',
 			message: 'Error: API-Connection failed.',
-			icon: "./src/media/error.png",
+			icon: "./assets/error.png",
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
@@ -274,7 +300,7 @@ const UpdateTrackerButton = {
 const systray = new SysTray({
 	menu: {
 		// you should use .png icon on macOS/Linux, and .ico format on Windows */
-		icon: os.platform() === 'win32' ? './src/media/systray.ico' : './src/media/systray.png',
+		icon: os.platform() === 'win32' ? './assets/systray.ico' : './assets/systray.png',
 		title: 'Ace Logistics',
 		tooltip: 'Ace Logistics',
 		items: [
@@ -292,13 +318,35 @@ function ExitApplication() {
 	notifier.notify({
 		title: 'Ace Logistics',
 		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the JobTracker again.',
-		icon: "./src/media/warning.png",
+		icon: "./assets/warning.png",
 		timeout: 1,
 		appID: "Ace Logistics - JobTracker",
 		sound: true,
 		wait: false
 	});
 	setTimeout(() => {
+		if (os.arch() == "x32") {
+			exec('TerminateDRP_x86.exe', function(err, data) {  
+				if (devmode == 1) {
+					console.log(err)
+					console.log(data.toString());                       
+				}
+			});  
+		} else if (os.arch() == "x64") {
+			exec('TerminateDRP_x64.exe', function(err, data) {  
+				if (devmode == 1) {
+					console.log(err)
+					console.log(data.toString());                       
+				}
+			});  
+		} else {
+			exec('TerminateDRP_x86.exe', function(err, data) {  
+				if (devmode == 1) {
+					console.log(err)
+					console.log(data.toString());                       
+				}
+			});  
+		}
 		process.exit(1);
 		systray.kill();
 	}, 1000);
@@ -313,7 +361,7 @@ function UpdateApplication() {
 				notifier.notify({
 					title: 'Ace Logistics',
 					message: 'Info: Update available.',
-					icon: "./src/media/info.png",
+					icon: "./assets/info.png",
 					timeout: 1,
 					appID: "Ace Logistics - JobTracker",
 					sound: true,
@@ -325,7 +373,7 @@ function UpdateApplication() {
 				notifier.notify({
 					title: 'Ace Logistics',
 					message: 'Success: The JobTracker is up to date.',
-					icon: "./src/media/success.png",
+					icon: "./assets/success.png",
 					timeout: 1,
 					appID: "Ace Logistics - JobTracker",
 					sound: true,
@@ -336,7 +384,7 @@ function UpdateApplication() {
 			notifier.notify({
 				title: 'Ace Logistics',
 				message: 'Error: The update check cannot be performed. Try again later.',
-				icon: "./src/media/error.png",
+				icon: "./assets/error.png",
 				timeout: 1,
 				appID: "Ace Logistics - JobTracker",
 				sound: true,
@@ -347,6 +395,28 @@ function UpdateApplication() {
 }
 
 function RestartApplication() {
+	if (os.arch() == "x32") {
+		exec('RebootDRP_x86.exe', function(err, data) {  
+			if (devmode == 1) {
+				console.log(err)
+				console.log(data.toString());                       
+			}
+		});  
+	} else if (os.arch() == "x64") {
+		exec('RebootDRP_x64.exe', function(err, data) {  
+			if (devmode == 1) {
+				console.log(err)
+				console.log(data.toString());                       
+			}
+		});  
+	} else {
+		exec('RebootDRP_x86.exe', function(err, data) {  
+			if (devmode == 1) {
+				console.log(err)
+				console.log(data.toString());                       
+			}
+		});  
+	}
 	setTimeout(function() {
 		process.on("exit", function() {
 			require("child_process").spawn(process.argv.shift(), process.argv, {
