@@ -1,4 +1,4 @@
-﻿/* Dependencies */
+/* Dependencies */
 var ETCarsClient = require('etcars-node-client');
 const notifier = require('node-notifier');
 const path = require('path');
