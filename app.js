@@ -184,6 +184,7 @@ updateserver.onreadystatechange = function() {
 
 /* Ingame-Data/API-Connection */
 etcars.on('data', function(data) {
+	data = str.replace("-nan", "0");
 	if (devmode == 1) {
 		console.log('Data received.');
 	}
