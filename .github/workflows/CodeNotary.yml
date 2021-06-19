@@ -1,2 +1,15 @@
-- name: Verify commit
-  uses: vchain-us/verify-action@v0.1.0
+name: CodeNotary
+
+on: [push]
+
+jobs:
+  check:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+     - name: Checkout
+       uses: actions/checkout@master
+     
+     - name: Verify
+       uses: vchain-us/verify-action@master
