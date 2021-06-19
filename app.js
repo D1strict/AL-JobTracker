@@ -14,6 +14,7 @@ var open = require('open');
 const SysTray = require('systray2').default;
 const os = require('os');
 var exec = require('child_process').execFile;
+const exitHook = require('exit-hook');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
@@ -21,7 +22,87 @@ var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
-/* Process-Checking (is it running already) */
+
+
+/* Functions */
+
+var restartDRP = function() {
+	if (devmode == 1) {
+		console.log("Restart DRP...");
+	}
+	if (os.arch() == "x32") {
+		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
+			if (devmode == 1) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log(data.toString());
+			}
+		});
+	} else if (os.arch() == "x64") {
+		exec(__dirname + '\\RebootDRP_x64.exe', function(err, data) {
+			if (devmode == 1) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log(data.toString());
+			}
+		});
+	} else {
+		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
+			if (devmode == 1) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log(data.toString());
+			}
+		});
+	}
+}
+
+var terminateDRP = function() {
+	if (devmode == 1) {
+		console.log("Terminate DRP...");
+	}
+	if (os.arch() == "x32") {
+		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
+			if (devmode == 1) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log(data.toString());
+			}
+		});
+	} else if (os.arch() == "x64") {
+		exec(__dirname + '\\TerminateDRP_x64.exe', function(err, data) {
+			if (devmode == 1) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log(data.toString());
+			}
+		});
+	} else {
+		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
+			if (devmode == 1) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				console.log(data.toString());
+			}
+		});
+	}
+}
+
+
+
+/* Process-Checking */
 rp({
 	uri: `http://localhost:${AlTPort}${AlTPath}`,
 	resolveWithFullResponse: true
@@ -37,8 +118,8 @@ rp({
 			wait: false
 		});
 		setTimeout(() => {
-			process.exit(1);
 			systray.kill();
+			process.exit(1);
 		}, 2000);
 	} else {
 		throw new Error(`statusCode ${res.statusCode}`)
@@ -63,41 +144,22 @@ rp({
 	etcars.connect();
 	notifier.notify({
 		title: 'Ace Logistics',
-		message: 'Info: Tracker started.',
-		icon: "./assets/info.png",
+		message: 'Success: Tracker started.',
+		icon: "./assets/success.png",
 		timeout: 1,
 		appID: "Ace Logistics - JobTracker",
 		sound: true,
 		wait: false
 	});
-	if (os.arch() == "x32") {
-		exec('RebootDRP_x86.exe', function(err, data) {  
-			if (devmode == 1) {
-				console.log(err)
-				console.log(data.toString());                       
-			}
-		});  
-	} else if (os.arch() == "x64") {
-		exec('RebootDRP_x64.exe', function(err, data) {  
-			if (devmode == 1) {
-				console.log(err)
-				console.log(data.toString());                       
-			}
-		});  
-	} else {
-		exec('RebootDRP_x86.exe', function(err, data) {  
-			if (devmode == 1) {
-				console.log(err)
-				console.log(data.toString());                       
-			}
-		});  
-	}
+	restartDRP();
+
 	if (devmode == 1) {
 		setInterval(() => {
 			console.log("still running");
 		}, 1000);
 	}
 });
+
 /* Update-Check */
 updateserver.open("GET", "https://api.d1strict.net/al/v2/appversion.txt");
 updateserver.send();
@@ -105,22 +167,22 @@ updateserver.onreadystatechange = function() {
 	if (this.readyState == 4 && this.status == 200) {
 		if (updateserver.responseText > version) {
 			notifier.notify({
-				title: 'Ace Logistics',
-				message: 'Info: Update available. Discord will be opened soon, you can open a support ticket there to update the tracker.',
-				icon: "./assets/info.png",
-				timeout: 1,
-				appID: "Ace Logistics - JobTracker",
-				sound: true,
-				wait: true
-			}, 
-			function() {
-				open('https://discord.gg/WrMg4CmVve');
-			});
+					title: 'Ace Logistics',
+					message: 'Info: Update available. Discord will be opened soon, you can open a support ticket there to update the tracker.',
+					icon: "./assets/info.png",
+					timeout: 1,
+					appID: "Ace Logistics - JobTracker",
+					sound: true,
+					wait: true
+				},
+				function() {
+					open('https://discord.gg/WrMg4CmVve');
+				});
 		}
 	}
 }
 
-/* Ingame-Data */
+/* Ingame-Data/API-Connection */
 etcars.on('data', function(data) {
 	if (devmode == 1) {
 		console.log('Data received.');
@@ -191,7 +253,7 @@ etcars.on('data', function(data) {
 		}
 		var data = fs.readFileSync('./apikey.txt', 'utf8');
 		if (devmode == 1) {
-    		console.log('Authentication with API key:' + data.toString() + '');  
+			console.log('Authentication with API key:' + data.toString() + '');
 		}
 		request.send('isMultiplayer=' + isMultiplayer + '&gameID=' + gameID + '&gameName=' + gameName + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&jobStatus=' + jobStatus + '&jobCargo=' + jobCargo + '&jobCargoID=' + jobCargoID + '&jobMass=' + jobMass + '&jobExIncome=' + jobExIncome + '&jobSourceCity=' + jobSourceCity + '&jobSourceCityID=' + jobSourceCityID + '&jobSourceCompany=' + jobSourceCompany + '&jobSourceCompanyID=' + jobsourceCompanyID + '&jobDestinationCity=' + jobDestinationCity + '&jobDestinationCityID=' + jobDestinationCityID + '&jobDestinationCompany=' + jobDestinationCompany + '&jobDestinationCompanyID=' + jobDestinationCompanyID + '&isLate=' + jobIsLate + '&jobFineSpeeding=' + jobFineSpeeding + '&jobDistanceDriven=' + jobDistanceDriven + '&jobFuelBurned=' + jobFuelBurned + '&jobFuelPurchased=' + jobFuelPurchased + '&jobFineCollisions=' + jobFineCollisions + '&jobTrailerStartDamage=' + jobTrailerStartDamage + '&jobTrailerFinishDamage=' + jobTrailerFinishDamage + '&jobEngineStartDamage=' + jobEngineStartDamage + '&jobEngineFinishDamage=' + jobEngineFinishDamage + '&jobTransmissionStartDamage=' + jobTransmissionStartDamage + '&jobTransmissionFinishDamage=' + jobTransmissionFinishDamage + '&jobCabinStartDamage=' + jobCabinStartDamage + '&jobCabinFinishDamage=' + jobCabinFinishDamage + '&jobChassisStartDamage=' + jobChassisStartDamage + '&jobChassisFinishDamage=' + jobChassisFinishDamage + '&jobWheelStartDamage=' + jobWheelStartDamage + '&jobWheelFinishDamage=' + jobWheelFinishDamage + '&jobRealTimeStarted=' + jobRealTimeStarted + '&jobRealTimeTaken=' + jobRealTimeTaken + '&jobRealTimeEnded=' + jobRealTimeEnded + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&apikey=' + data.toString() + ''); /* Sends data to the Map API. */
 	} else if ((jobStatus == "1") && (apistatus == "false")) {
@@ -250,6 +312,7 @@ etcars.on('error', function(data) {
 		console.log('etcars error');
 	}
 });
+
 /* Systray */
 const AceLogistcsMenu = {
 	title: 'Ace Logistics',
@@ -270,7 +333,7 @@ const AceLogistcsMenu = {
 			checked: false,
 			enabled: true
 		},
-		
+
 	]
 }
 const RestartTrackerButton = {
@@ -311,7 +374,7 @@ const systray = new SysTray({
 		]
 	},
 	debug: false,
-	copyDir: false // copy go tray binary to outside directory, useful for packing tool like pkg. */
+	copyDir: false
 })
 //Functions */
 function ExitApplication() {
@@ -325,30 +388,9 @@ function ExitApplication() {
 		wait: false
 	});
 	setTimeout(() => {
-		if (os.arch() == "x32") {
-			exec('TerminateDRP_x86.exe', function(err, data) {  
-				if (devmode == 1) {
-					console.log(err)
-					console.log(data.toString());                       
-				}
-			});  
-		} else if (os.arch() == "x64") {
-			exec('TerminateDRP_x64.exe', function(err, data) {  
-				if (devmode == 1) {
-					console.log(err)
-					console.log(data.toString());                       
-				}
-			});  
-		} else {
-			exec('TerminateDRP_x86.exe', function(err, data) {  
-				if (devmode == 1) {
-					console.log(err)
-					console.log(data.toString());                       
-				}
-			});  
-		}
-		process.exit(1);
+		terminateDRP();
 		systray.kill();
+		process.exit(1);
 	}, 1000);
 }
 
@@ -395,51 +437,46 @@ function UpdateApplication() {
 }
 
 function RestartApplication() {
-	if (os.arch() == "x32") {
-		exec('RebootDRP_x86.exe', function(err, data) {  
-			if (devmode == 1) {
-				console.log(err)
-				console.log(data.toString());                       
-			}
-		});  
-	} else if (os.arch() == "x64") {
-		exec('RebootDRP_x64.exe', function(err, data) {  
-			if (devmode == 1) {
-				console.log(err)
-				console.log(data.toString());                       
-			}
-		});  
-	} else {
-		exec('RebootDRP_x86.exe', function(err, data) {  
-			if (devmode == 1) {
-				console.log(err)
-				console.log(data.toString());                       
-			}
-		});  
-	}
 	setTimeout(function() {
-		process.on("exit", function() {
+		exitHook(() => {
 			require("child_process").spawn(process.argv.shift(), process.argv, {
 				cwd: process.cwd(),
 				detached: true,
 				stdio: "inherit"
 			});
+			restartDRP();
 		});
-		process.exit();
+		process.exit(1);
 	}, 3000);
 }
-//Systray Update */
+
 systray.onClick(action => {
 	if (action.item.click != null) {
 		action.item.click()
 	}
 })
 systray.onClick(action => {
-	if (action.seq_id === 0) { //Ace Logistics Homepage Button
+	if (action.seq_id === 0) {
 		open('https://ace-logistics.uk');
-	} else if (action.seq_id === 1) { //sumbit a job button
+	} else if (action.seq_id === 1) {
 		open('https://d1strict.de/form-user-response/10-submit-a-job/');
-	} else if (action.seq_id === 2) { //Help button
+	} else if (action.seq_id === 2) {
 		open('https://discord.gg/WrMg4CmVve');
 	}
 })
+
+exitHook(() => {
+	notifier.notify({
+		title: 'Ace Logistics',
+		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the JobTracker again.',
+		icon: "./assets/warning.png",
+		timeout: 1,
+		appID: "Ace Logistics - JobTracker",
+		sound: true,
+		wait: false
+	});
+	setTimeout(() => {
+		terminateDRP();
+		systray.kill();
+	}, 2000);
+});
