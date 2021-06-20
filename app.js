@@ -281,7 +281,7 @@ updateserver.onreadystatechange = function() {
 						exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x86.exe']);
 					});
 				}
-			}, 1000);
+			}, 90000);
 		}
 	}
 }
@@ -591,7 +591,7 @@ function UpdateApplication() {
 	updateserver.send();
 	updateserver.onreadystatechange = function() {
 		if (this.readyState == 4 && this.status == 200) {
-			if (updateserver.responseText >= version) {
+			if (updateserver.responseText > version) {
 				notifier.notify({
 					title: 'Ace Logistics',
 					message: 'Info: Update available. Update is being downloaded.',
@@ -647,7 +647,7 @@ function UpdateApplication() {
 							exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x86.exe']);
 						});
 					}
-				}, 1000);
+				}, 90000);
 			} else {
 				notifier.notify({
 					title: 'Ace Logistics',
