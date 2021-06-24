@@ -19,7 +19,7 @@ const exitHook = require('exit-hook');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
-var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
+var devmode = 1; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
@@ -104,8 +104,8 @@ var terminateDRP = function() {
 
 var submitLocalJobs = function() {
 	fs.readdir("./jobs/", (err, files) => {
+		if (err) throw err;
 		files.forEach(file => {
-			if (err) throw err;
 			var jsondata = fs.readFileSync("./jobs/" + file + "", 'utf8');
 			if (jsondata = " ") {
 				fs.unlink()('./jobs/' + file + '', (err) => {
@@ -291,78 +291,88 @@ etcars.on('data', function(data) {
 	if (devmode == 1) {
 		console.log('Data received.');
 	}
-	var isMultiplayer = data.jobData.isMultiplayer; /* Return: Boolean */
-	var isPaused = data.telemetry.game.paused; /* Return: Boolean */
-	var isDriving = data.telemetry.game.isDriving; /* Return:: Boolean */
-	var gameID = data.telemetry.game.gameID; /* Return: ets2 or ats */
-	var gameName = data.telemetry.game.gameName; /* Return: Euro Truck Simulator 2 or American Truck Simulator */
-	var truckMake = data.telemetry.truck.make; /* Return: String */
-	var truckModel = data.telemetry.truck.model; /* Return: String */
-	var truckPositionX = data.telemetry.truck.worldPlacement.x; /* X-Coordinate of the Truck */
-	var truckPositionY = data.telemetry.truck.worldPlacement.y; /* Y-Coordinate of the Truck */
-	var truckPositionZ = data.telemetry.truck.worldPlacement.z; /* Z-Coordinate of the Truck */
-	var jobRemainingTime = data.jobData.timeRemaining; /* Remaining time, until the delivery will be late */
-	var steamID = data.telemetry.user.steamID; /* Steam-UserID */
-	var steamUsername = data.telemetry.user.steamUsername; /* Steam-Username */
-	var currentSpeed = data.telemetry.truck.speed; /* Current Speed */
-	var currentJobDestination = data.telemetry.job.destinationCity; /* Current Job-Destination*/
-	var currentJobSource = data.telemetry.job.sourceCity; /* Current Job-Source */
-	var eta = data.telemetry.navigation.lowestDistance; /* ETA */
-	var jobStatus = data.jobData.status; /* 1 = In progress, 2 = Finished, 3 = Cancelled */
-	var currentFuel = data.telemetry.truck.fuel.currentLitres; /* Current fuel in l */
+	const GeneralInformation =
+	{
+		'isMultiplayer': data.jobData.isMultiplayer, /* Return: Boolean */
+		'isPaused': data.telemetry.game.paused, /* Return: Boolean */
+		'isDriving': data.telemetry.game.isDriving, /* Return:: Boolean */
+		'gameID': data.telemetry.game.gameID, /* Return: ets2 or ats */
+		'gameName': data.telemetry.game.gameName, /* Return: Euro Truck Simulator 2 or American Truck Simulator */
+		'truckMake': data.telemetry.truck.make, /* Return: String */
+		'truckModel': data.telemetry.truck.model, /* Return: String */
+		'truckPositionX': data.telemetry.truck.worldPlacement.x, /* X-Coordinate of the Truck */
+		'truckPositionY': data.telemetry.truck.worldPlacement.y, /* Y-Coordinate of the Truck */
+		'truckPositionZ': data.telemetry.truck.worldPlacement.z, /* Z-Coordinate of the Truck */
+		'jobRemainingTime': data.jobData.timeRemaining, /* Remaining time, until the delivery will be late */
+		'steamID': data.telemetry.user.steamID, /* Steam-UserID */
+		'steamUsername': data.telemetry.user.steamUsername, /* Steam-Username */
+		'currentSpeed': data.telemetry.truck.speed, /* Current Speed */
+		'currentJobDestination': data.telemetry.job.destinationCity, /* Current Job-Destination*/
+		'currentJobSource': data.telemetry.job.sourceCity,  /* Current Job-Source */
+		'eta': data.telemetry.navigation.lowestDistance, /* ETA */
+		'jobStatus': data.jobData.status, /* 1 = In progress, 2 = Finished, 3 = Cancelled */
+		'currentFuel': data.telemetry.truck.fuel.currentLitres  /* Current fuel in l */
+	}
+	const GeneralInformationJSON = JSON.stringify(GeneralInformation);
 	map.open('POST', 'https://api.d1strict.net/al/v2/map', true); /* Open the request to the Map API. */
 	map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
-	map.send('x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey.toString() + ''); /* Sends data to the Map API. */
+	map.send(GeneralInformationJSON);
+	//map.send('x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey.toString() + ''); /* Sends data to the Map API. */
 	if (devmode == 1) {
 		console.log('Position sent to the Map-API.');
+		console.log('JobInfo \n\n' + GeneralInformationJSON);
 	}
 	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
-		var jobCargo = data.jobData.cargo; /* Name of cargo */
-		var jobCargoID = data.jobData.cargoID; /* ID of cargo */
-		var jobMass = data.jobData.trailerMass; /* Mass of cargo in kg */
-		var jobExIncome = data.jobData.income; /* Total expected income */
-		var jobSourceCity = data.jobData.sourceCity; /* Name of the Sourcecity */
-		var jobSourceCityID = data.jobData.sourceCityID; /* ID of the Sourcecity */
-		var jobSourceCompany = data.jobData.sourceCompany; /* Name of the Sourcecompany */
-		var jobsourceCompanyID = data.jobData.sourceCompanyID; /* ID of the Sourcecompany */
-		var jobDestinationCity = data.jobData.destinationCity; /* Name of the Destination-City */
-		var jobDestinationCityID = data.jobData.destinationCityID; /* ID of the Destination-City */
-		var jobDestinationCompany = data.jobData.destinationCompany; /* Name of the Destination-Company */
-		var jobDestinationCompanyID = data.jobData.destinationCompanyID; /* ID of the Destination-Company */
-		var jobIsLate = data.jobData.isLate; /* Return: Boolean */
-		var jobFineSpeeding = data.jobData.speedingCount; /* Counts of Speeding-Incidents */
-		var jobDistanceDriven = data.jobData.distanceDriven; /* Driven KM */
-		var jobFuelBurned = data.jobData.fuelBurned; /* Burned fuel in l */
-		var jobFuelPurchased = data.jobData.fuelPurchased; /* Purchased fuel in l */
-		var jobFineCollisions = data.jobData.collisionCount; /* Counts of Collisions */
-		var jobTrailerStartDamage = data.jobData.startTrailerDamage; /* Damage at the start of the job */
-		var jobTrailerFinishDamage = data.jobData.finishTrailerDamage; /* Damage at the finish of the job */
-		var jobEngineStartDamage = data.jobData.startEngineDamage; /* Damage of the engine at the start of the job */
-		var jobTransmissionStartDamage = data.jobData.startTransmissionDamage; /* Damage of the transmission at the start of the job */
-		var jobCabinStartDamage = data.jobData.startCabinDamage; /* Damage of the cabin at the start of the job */
-		var jobChassisStartDamage = data.jobData.startChassisDamage; /* Damage of the Chassis at the start of the job */
-		var jobWheelStartDamage = data.jobData.startWheelDamage; /* Damage of the Wheels at the start of the job */
-		var jobEngineFinishDamage = data.jobData.startEngineDamage; /* Damage of the engine at the end of the job */
-		var jobTransmissionFinishDamage = data.jobData.startTransmissionDamage; /* Damage of the transmission at the end of the job */
-		var jobCabinFinishDamage = data.jobData.startCabinDamage; /* Damage of the cabin at the end of the job */
-		var jobChassisFinishDamage = data.jobData.startChassisDamage; /* Damage of the Chassis at the end of the job */
-		var jobWheelFinishDamage = data.jobData.startWheelDamage; /* Damage of the Wheels at the end of the job */
-		var jobRealTimeStarted = data.jobData.realTimeStarted; /* Real-Time, when the delivery was picked up */
-		var jobRealTimeEnded = data.jobData.realTimeEnded; /* Real-Time, when the delivery was finished */
-		var jobRealTimeTaken = data.jobData.realTimeTaken; /* Real-TIme, spent on the delivery */
+		const JobInformation = {
+			'jobCargo': data.jobData.cargo, 
+			'jobCargoID': data.jobData.cargoID,
+			'jobMass': data.jobData.trailerMass,
+			'jobExIncome': data.jobData.income,
+			'JobSourceCity': data.jobData.sourceCity,
+			'jobSourceCityID': data.jobData.sourceCityID,
+			'jobSourceCompany': data.jobData.sourceCompany,
+			'jobSourceCompanyID': data.jobData.sourceCompanyID,
+			'jobDestinationCity': data.jobData.destinationCompany,
+			'jobDestinationCityID': data.jobData.destinationCompanyID,
+			'jobIsLate': data.jobData.isLate,
+			'jobFineSpeeding': data.jobData.speedingCount,
+			'jobDisctanceDriven': data.jobData.distanceDriven,
+			'jobFuelBurned': data.jobData.fuelBurned,
+			'jobFuelPurchased': data.jobData.fuelPurchased,
+			'jobFineCollisions': data.jobData.collisionCount,
+			'jobTrailerStartDamage': data.jobData.startTrailerDamage,
+			'jobTrailerFinishDamage': data.jobData.finishTrailerDamage,
+			'jobEngineStartDamage': data.jobData.startEngineDamage,
+			'jobEngineFinishDamage': data.jobData.finishEngineDamage,
+			'jobTransmissionStartDamage': data.jobData.startTransmissionDamage,
+			'jobCabinStartDamage': data.jobData.startCabinDamage,
+			'jobChassisStartDamage': data.jobData.startChassisDamage,
+			'jobWheelStartDamage': data.jobData.startWheelDamage,
+			'jobTransmissionFinishDamage': data.jobData.finishTransmissionDamage,
+			'jobCabinFinishDamage': data.jobData.startCabinDamage,
+			'jobChassisFinishDamage': data.jobData.startChassisDamage,
+			'jobWheelFinishDamage': data.jobData.finishWheelDamage,
+			'jobRealTimeStarted': data.jobData.realTimeStarted,
+			'jobRealTimeEnded': data.jobData.realTimeEnded,
+			'jobRealTimeTaken': data.jobData.realTimeTaken
+		}
 		request.open('POST', 'https://api.d1strict.net/al/v2/add', true); /* Open the request to the Job-API. */
 		request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Job-API */
+		const JobInformationJSON = JSON.stringify(JobInformation); /*Converts the JobInformation into a JSON file */
+		request.send(JobInformationJSON); /*Sends the JSON file to the API*/
 		if (devmode == 1) {
 			console.log('Job finished, Connecting...');
+			console.log(JobInformation);
 		}
 		if (devmode == 1) {
 			console.log('Authentication with API key:' + apikey + '');
 		}
-		request.send('isMultiplayer=' + isMultiplayer + '&gameID=' + gameID + '&gameName=' + gameName + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&jobStatus=' + jobStatus + '&jobCargo=' + jobCargo + '&jobCargoID=' + jobCargoID + '&jobMass=' + jobMass + '&jobExIncome=' + jobExIncome + '&jobSourceCity=' + jobSourceCity + '&jobSourceCityID=' + jobSourceCityID + '&jobSourceCompany=' + jobSourceCompany + '&jobSourceCompanyID=' + jobsourceCompanyID + '&jobDestinationCity=' + jobDestinationCity + '&jobDestinationCityID=' + jobDestinationCityID + '&jobDestinationCompany=' + jobDestinationCompany + '&jobDestinationCompanyID=' + jobDestinationCompanyID + '&isLate=' + jobIsLate + '&jobFineSpeeding=' + jobFineSpeeding + '&jobDistanceDriven=' + jobDistanceDriven + '&jobFuelBurned=' + jobFuelBurned + '&jobFuelPurchased=' + jobFuelPurchased + '&jobFineCollisions=' + jobFineCollisions + '&jobTrailerStartDamage=' + jobTrailerStartDamage + '&jobTrailerFinishDamage=' + jobTrailerFinishDamage + '&jobEngineStartDamage=' + jobEngineStartDamage + '&jobEngineFinishDamage=' + jobEngineFinishDamage + '&jobTransmissionStartDamage=' + jobTransmissionStartDamage + '&jobTransmissionFinishDamage=' + jobTransmissionFinishDamage + '&jobCabinStartDamage=' + jobCabinStartDamage + '&jobCabinFinishDamage=' + jobCabinFinishDamage + '&jobChassisStartDamage=' + jobChassisStartDamage + '&jobChassisFinishDamage=' + jobChassisFinishDamage + '&jobWheelStartDamage=' + jobWheelStartDamage + '&jobWheelFinishDamage=' + jobWheelFinishDamage + '&jobRealTimeStarted=' + jobRealTimeStarted + '&jobRealTimeTaken=' + jobRealTimeTaken + '&jobRealTimeEnded=' + jobRealTimeEnded + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&apikey=' + apikey.toString() + ''); /* Sends data to the Map API. */
+
 	} else if ((jobStatus == "1") && (apistatus == "false")) {
 		apistatus = "true";
 	}
 });
+
 request.onload = function() {
 	if (this.status === 200) {
 		notifier.notify({
