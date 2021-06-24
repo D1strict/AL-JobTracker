@@ -16,6 +16,7 @@ const SysTray = require('systray2').default;
 const os = require('os');
 var exec = require('child_process').execFile;
 const exitHook = require('exit-hook');
+const decompress = require('decompress');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
@@ -247,38 +248,45 @@ updateserver.onreadystatechange = function() {
 				if (os.arch() == "x32") {
 					notifier.notify({
 						title: 'Ace Logistics',
-						message: 'Success: The update has been downloaded. Execute the setup file under: ' + __dirname + '\\StartUpdate_x86.exe',
+						message: 'Success: The update has been downloaded. The tracker will restart soon...',
 						icon: "./assets/success.png",
 						timeout: 1,
 						appID: "Ace Logistics - JobTracker",
 						sound: true,
 						wait: true
-					}, function() {
-						exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x86.exe']);
+					});
+					decompress('Update_x32.zip', './').then(files => {
+						if (devmode == 1) console.log('Extraction done!');
+						RestartApplication();
 					});
 				} else if (os.arch() == "x64") {
 					notifier.notify({
 						title: 'Ace Logistics',
-						message: 'Success: The update has been downloaded. Execute the setup file under: ' + __dirname + '\\StartUpdate_x64.exe',
+						message: 'Success: The update has been downloaded. The tracker will restart soon...',
 						icon: "./assets/success.png",
 						timeout: 1,
 						appID: "Ace Logistics - JobTracker",
 						sound: true,
 						wait: true
-					}, function() {
-						exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x64.exe']);
+					});
+					decompress('Update_x64.zip', './').then(files => {
+						if (devmode == 1) console.log('Extraction done!');
+						RestartApplication();
 					});
 				} else {
 					notifier.notify({
 						title: 'Ace Logistics',
-						message: 'Success: The update has been downloaded. Execute the setup file under: ' + __dirname + '\\StartUpdate_x86.exe',
+						message: 'Success: The update has been downloaded. The tracker will restart soon...',
 						icon: "./assets/success.png",
 						timeout: 1,
 						appID: "Ace Logistics - JobTracker",
 						sound: true,
 						wait: true
-					}, function() {
-						exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x86.exe']);
+					
+					});
+					decompress('Update_x86.zip', './').then(files => {
+						if (devmode == 1) console.log('Extraction done!');
+						RestartApplication();
 					});
 				}
 			}, 90000);
