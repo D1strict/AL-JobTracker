@@ -7,7 +7,7 @@
     "is-online": "^9.0.1",
     "is-reachable": "^5.0.0",
     "node-notifier": "^10.0.0",
-    "open": "^8.2.0",
+    "open": "^8.2.1",
     "os": "^0.1.1",
     "request": "^2.88.2",
     "request-promise": "^4.2.6",
