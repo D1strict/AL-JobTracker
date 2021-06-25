@@ -1,3 +1,12 @@
+/* 	Ace Logistics - JobTracker 1.1.0
+
+    @Authors: AdyStudios, Felix Waßmuth (D1strict-Development)
+    @License: GNU General Public License v3.0 - https://github.com/D1strict/AL-JobTracker/blob/main/LICENSE
+    @Website: https://ace-logistics.uk/
+    (c) 2021, Ace Logistics
+
+*/
+
 /* Dependencies */
 var ETCarsClient = require('etcars-node-client');
 const notifier = require('node-notifier');
@@ -8,6 +17,7 @@ var request = new XMLHttpRequest();
 var map = new XMLHttpRequest();
 var localjobsender = new XMLHttpRequest();
 var updateserver = new XMLHttpRequest();
+var filehashCheck = new XMLHttpRequest();
 const http = require('http');
 const https = require('https');
 const rp = require('request-promise');
@@ -16,7 +26,8 @@ const SysTray = require('systray2').default;
 const os = require('os');
 var exec = require('child_process').execFile;
 const exitHook = require('exit-hook');
-const decompress = require('decompress');
+const isOnline = require('is-online');
+const isReachable = require('is-reachable');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
@@ -26,10 +37,245 @@ const AlTPort = 10853; /* Port for the process check (should be a port which is 
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
 var apikey = ""; /* INSERT API-KEY */
 
+/* StartUp */
+onlineCheck();
+updateCheck();
+submitLocalJobs();
+restartDRP();
 
 /* Functions */
 
-var restartDRP = function() {
+async function onlineCheck() {
+	isOnlineCheck = await isOnline();
+	isReachableCheck = await isReachable('api.d1strict.net/al/1-1-0/appversion.txt');
+	return;
+}
+
+/* Checking for - and installing updates */
+async function updateCheck(notification) {
+	await onlineCheck();
+	if (isOnlineCheck && isReachableCheck) {
+		updateserver.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
+		updateserver.send();
+		updateserver.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				if (updateserver.responseText > version) {
+					if (os.arch() == "x32") {
+						url = "https://d1strict.de/media/218/";
+						dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+					} else if (os.arch() == "x64") {
+						url = "https://d1strict.de/media/220/";
+						dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+					} else {
+						url = "https://d1strict.de/media/220/";
+						dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+					}
+					downloadUpdate(url, dest);
+					if (notification == "corrupt") {
+						notifier.notify({
+							title: 'Ace Logistics',
+							message: 'Info: Update is being downloaded.',
+							icon: "./assets/info.png",
+							timeout: 1,
+							appID: "Ace Logistics - JobTracker",
+							sound: true,
+							id: 100,
+							wait: false
+						})
+					} else if (notification == "notification") {
+						notifier.notify({
+							title: 'Ace Logistics',
+							message: 'Info: Update available. Update is being downloaded.',
+							icon: "./assets/info.png",
+							timeout: 1,
+							appID: "Ace Logistics - JobTracker",
+							sound: true,
+							id: 100,
+							wait: true
+						})
+					}
+				} else {
+					if (notification == "notification") {
+						notifier.notify({
+							title: 'Ace Logistics',
+							message: 'Info: The JobTracker is up to date.',
+							icon: "./assets/info.png",
+							timeout: 1,
+							appID: "Ace Logistics - JobTracker",
+							sound: true,
+							id: 100,
+							wait: true
+						})
+					}
+				}
+			}
+		}
+	}
+}
+
+async function getUpdateFileHash(hex) {
+	await onlineCheck();
+	if (isOnlineCheck && isReachableCheck) {
+		if (os.arch() == "x32") {
+			filehashCheck.open("GET", "https://api.d1strict.net/al/1-1-0/filehash86.txt");
+		} else if (os.arch() == "x64") {
+			filehashCheck.open("GET", "https://api.d1strict.net/al/1-1-0/filehash64.txt");
+		} else {
+			filehashCheck.open("GET", "https://api.d1strict.net/al/1-1-0/filehash64.txt");
+		}
+		filehashCheck.send();
+		filehashCheck.onreadystatechange = function() {
+			if (this.readyState == 4 && this.status == 200) {
+				if (filehashCheck.responseText == hex) {
+					notifier.notify({
+						title: 'Ace Logistics',
+						message: 'Success: The update has been downloaded successfully. The installation routine will be started in a few moments.',
+						icon: "./assets/success.png",
+						timeout: 1,
+						appID: "Ace Logistics - JobTracker",
+						sound: true,
+						id: 101,
+						wait: false
+					});
+					exec(os.tmpdir() + '\\Updated_ALJobTracker.exe', function(err, data) {
+						if (devmode == 1) {
+							if (err) {
+								console.log(err);
+								return;
+							}
+							console.log(data.toString());
+						}
+					})
+					setTimeout(() => {
+						terminateDRP();
+						systray.kill();
+					}, 5000);
+				} else {
+					updateCheck("corrupt");
+					notifier.notify({
+						title: 'Ace Logistics',
+						message: 'Warning: The file hash of the downloaded update does not match our records. Therefore, the update might be corrupt and will be downloaded again.',
+						icon: "./assets/warning.png",
+						timeout: 1,
+						appID: "Ace Logistics - JobTracker",
+						sound: true,
+						id: 101,
+						wait: true
+					});
+				}
+			}
+		}
+	}
+}
+
+async function downloadUpdate(url, dest, cb) {
+	await onlineCheck();
+	if (isOnlineCheck && isReachableCheck) {
+		var file = fs.createWriteStream(dest);
+		var request = https.get(url, function(response) {
+			response.pipe(file);
+			file.on('finish', function() {
+				file.close(cb); // close() is async, call cb after close completes.
+				const fileBuffer = fs.readFileSync('myfile.js');
+				const hashSum = crypto.createHash('sha256');
+				hashSum.update(fileBuffer);
+				const hex = hashSum.digest('hex');
+				getUpdateFileHash(hex);
+			});
+		}).on('error', function(err) { // Handle errors
+			fs.unlink(dest); // Delete the file async. (But we don't check the result)
+			if (cb && devmode == 1) cb(err.message);
+			notifier.notify({
+				title: 'Ace Logistics',
+				message: 'Error: An error has occurred. The update could not be downloaded. Try again later.',
+				icon: "./assets/error.png",
+				timeout: 1,
+				appID: "Ace Logistics - JobTracker",
+				sound: true,
+				id: 102,
+				wait: true
+			});
+		});
+
+	}
+}
+
+/* Submit of local-saved Jobs */
+async function submitLocalJobs() {
+	await onlineCheck();
+	if (isOnlineCheck && isReachableCheck) {
+		fs.readdir("./jobs/", (err, files) => {
+			if (err) throw err;
+			files.forEach(file => {
+				var jsondata = fs.readFileSync("./jobs/" + file + "", 'utf8');
+				if (jsondata = " ") {
+					fs.unlink()('./jobs/' + file + '', (err) => {
+						if (err) throw err;
+					});
+				} else {
+					setTimeout(() => {
+						var content = JSON.parse(jsondata);
+						localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add', true); /* Open the request to the Job-API. */
+						localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
+						localjobsender.send(content); /*Sends the JSON file to the API*/
+						if (devmode == 1) {
+							console.log('Job finished, Connecting...');
+						}
+						filedeletion = './jobs/' + file + '';
+					}, 10000);
+				}
+			});
+		})
+	} else {
+		notifier.notify({
+			title: 'Ace Logistics',
+			message: 'Warning: Local jobs could not be submitted.\nCheck your internet connection.',
+			icon: "./assets/warning.png",
+			timeout: 1,
+			appID: "Ace Logistics - JobTracker",
+			sound: true,
+			id: 103,
+			wait: false
+		});
+	}
+}
+
+localjobsender.onload = function() {
+	if (this.readyState == 4 && this.status === 200) {
+		notifier.notify({
+			title: 'Ace Logistics',
+			message: 'Info: local Job submitted.',
+			icon: "./assets/success.png",
+			timeout: 1,
+			appID: "Ace Logistics - JobTracker",
+			sound: true,
+			id: 104,
+			wait: false
+		});
+		fs.writeFile(filedeletion, " ", (err) => {
+			if (err) throw err;
+			if (devmode == 1) {
+				console.log("API connection successful:");
+				console.log(this.responseText);
+				console.log("\nLocal job is emptied and flagged for deletion.")
+			}
+		})
+	} else if (this.readyState == 4 && this.status != 200) {
+		notifier.notify({
+			title: 'Ace Logistics',
+			message: 'Error: Local jobs could not be submitted.',
+			icon: "./assets/error.png",
+			timeout: 1,
+			appID: "Ace Logistics - JobTracker",
+			sound: true,
+			id: 104,
+			wait: false
+		});
+	}
+};
+
+/* Restart of the Discord-Rich Presence */
+function restartDRP() {
 	if (devmode == 1) {
 		console.log("Restart DRP...");
 	}
@@ -66,7 +312,8 @@ var restartDRP = function() {
 	}
 }
 
-var terminateDRP = function() {
+/* Termination of the Discord-Rich Presence */
+function terminateDRP() {
 	if (devmode == 1) {
 		console.log("Terminate DRP...");
 	}
@@ -103,65 +350,15 @@ var terminateDRP = function() {
 	}
 }
 
-var submitLocalJobs = function() {
-	fs.readdir("./jobs/", (err, files) => {
-		if (err) throw err;
-		files.forEach(file => {
-			var jsondata = fs.readFileSync("./jobs/" + file + "", 'utf8');
-			if (jsondata = " ") {
-				fs.unlink()('./jobs/' + file + '', (err) => {
-					if (err) throw err;
-				});
-			} else {
-				setTimeout(() => {
-					var jsonendata = JSON.parse(jsondata);
-					localjobsender.open('POST', 'https://api.d1strict.net/al/v2/add', true); /* Open the request to the Job-API. */
-					localjobsender.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Job-API */
-					if (devmode == 1) {
-						console.log('Job finished, Connecting...');
-					}
-					if (devmode == 1) {
-						console.log('Authentication with API key:' + data.toString() + '');
-					}
-					localjobsender.send('isMultiplayer=' + jsonendata.isMultiplayer + '&gameID=' + jsonendata.gameID + '&gameName=' + jsonendata.gameName + '&truckMake=' + jsonendata.truckMake + '&truckModel=' + jsonendata.truckModel + '&jobStatus=' + jsonendata.jobStatus + '&jobCargo=' + jsonendata.jobCargo + '&jobCargoID=' + jsonendata.jobCargoID + '&jobMass=' + jsonendata.jobMass + '&jobExIncome=' + jsonendata.jobExIncome + '&jobSourceCity=' + jsonendata.jobSourceCity + '&jobSourceCityID=' + jsonendata.jobSourceCityID + '&jobSourceCompany=' + jsonendata.jobSourceCompany + '&jobSourceCompanyID=' + jsonendata.jobsourceCompanyID + '&jobDestinationCity=' + jsonendata.jobDestinationCity + '&jobDestinationCityID=' + jsonendata.jobDestinationCityID + '&jobDestinationCompany=' + jsonendata.jobDestinationCompany + '&jobDestinationCompanyID=' + jsonendata.jobDestinationCompanyID + '&isLate=' + jsonendata.jobIsLate + '&jobFineSpeeding=' + jsonendata.jobFineSpeeding + '&jobDistanceDriven=' + jsonendata.jobDistanceDriven + '&jobFuelBurned=' + jsonendata.jobFuelBurned + '&jobFuelPurchased=' + jsonendata.jobFuelPurchased + '&jobFineCollisions=' + jsonendata.jobFineCollisions + '&jobTrailerStartDamage=' + jsonendata.jobTrailerStartDamage + '&jobTrailerFinishDamage=' + jsonendata.jobTrailerFinishDamage + '&jobEngineStartDamage=' + jsonendata.jobEngineStartDamage + '&jobEngineFinishDamage=' + jsonendata.jobEngineFinishDamage + '&jobTransmissionStartDamage=' + jsonendata.jobTransmissionStartDamage + '&jobTransmissionFinishDamage=' + jsonendata.jobTransmissionFinishDamage + '&jobCabinStartDamage=' + jsonendata.jobCabinStartDamage + '&jobCabinFinishDamage=' + jsonendata.jobCabinFinishDamage + '&jobChassisStartDamage=' + jsonendata.jobChassisStartDamage + '&jobChassisFinishDamage=' + jsonendata.jobChassisFinishDamage + '&jobWheelStartDamage=' + jsonendata.jobWheelStartDamage + '&jobWheelFinishDamage=' + jsonendata.jobWheelFinishDamage + '&jobRealTimeStarted=' + jsonendata.jobRealTimeStarted + '&jobRealTimeTaken=' + jsonendata.jobRealTimeTaken + '&jobRealTimeEnded=' + jsonendata.jobRealTimeEnded + '&steamID=' + jsonendata.steamID + '&steamUsername=' + jsonendata.steamUsername + '&apikey=' + apikey + ''); /* Sends data to the Map API. */
-					filedeletion = './jobs/' + file + '';
-				}, 10000);
-			}
-		});
-	})
-}
+/* Removal of existing notifications */
+var notifyIDS = ['100', '101', '102', '103', '104', '105', '106', '107'];
+notifyIDS.forEach(notifyRemove);
 
-localjobsender.onload = function() {
-	if (this.readyState == 4 && this.status === 200) {
-		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Info: local Job submitted.',
-			icon: "./assets/success.png",
-			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
-			sound: true,
-			wait: false
-		});
-		fs.writeFile(filedeletion, " ", (err) => {
-			if (err) throw err;
-			if (devmode == 1) {
-				console.log("API connection successful:");
-				console.log(this.responseText);
-				console.log("\nLocal job is emptied and flagged for deletion.")
-			}
-		})
-	} else if (this.readyState == 4 && this.status != 200) {
-		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Warning: Local jobs could not be submitted.\nCheck your internet connection.',
-			icon: "./assets/warning.png",
-			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
-			sound: true,
-			wait: false
-		});
-	}
-};
+function notifyRemove(index) {
+	notifier.notify({
+		'remove': index // to remove all group ID
+	});
+}
 
 /* Process-Checking */
 rp({
@@ -176,6 +373,7 @@ rp({
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
+			id: 105,
 			wait: false
 		});
 		setTimeout(() => {
@@ -205,11 +403,12 @@ rp({
 	etcars.connect();
 	notifier.notify({
 		title: 'Ace Logistics',
-		message: 'Success: Tracker started.',
-		icon: "./assets/success.png",
+		message: 'JobTracker started.',
+		icon: "./assets/logo.png",
 		timeout: 1,
 		appID: "Ace Logistics - JobTracker",
 		sound: true,
+		id: 105,
 		wait: false
 	});
 	restartDRP();
@@ -221,165 +420,67 @@ rp({
 	}
 });
 
-/* Update-Check */
-updateserver.open("GET", "https://api.d1strict.net/al/v2/appversion.txt");
-updateserver.send();
-updateserver.onreadystatechange = function() {
-	if (this.readyState == 4 && this.status == 200) {
-		if (updateserver.responseText > version) {
-			notifier.notify({
-				title: 'Ace Logistics',
-				message: 'Info: Update available. Update is being downloaded.',
-				icon: "./assets/info.png",
-				timeout: 1,
-				appID: "Ace Logistics - JobTracker",
-				sound: true,
-				wait: false
-			})
-			if (os.arch() == "x32") {
-				https.get("https://d1strict.de/media/220/", resp => resp.pipe(fs.createWriteStream(__dirname + '\\Updated_ALJobTracker.exe')));
-			} else if (os.arch() == "x64") {
-				https.get("https://d1strict.de/media/218/", resp => resp.pipe(fs.createWriteStream(__dirname + '\\Updated_ALJobTracker.exe')));
-			} else {
-				https.get("https://d1strict.de/media/220/", resp => resp.pipe(fs.createWriteStream(__dirname + '\\Updated_ALJobTracker.exe')));
-			}
-			console.log(__dirname + '\\Updated_ALJobTracker.exe');
-			setTimeout(() => {
-				if (os.arch() == "x32") {
-					notifier.notify({
-						title: 'Ace Logistics',
-						message: 'Success: The update has been downloaded. The tracker will restart soon...',
-						icon: "./assets/success.png",
-						timeout: 1,
-						appID: "Ace Logistics - JobTracker",
-						sound: true,
-						wait: true
-					});
-					decompress('Update_x32.zip', './').then(files => {
-						if (devmode == 1) console.log('Extraction done!');
-						RestartApplication();
-					});
-				} else if (os.arch() == "x64") {
-					notifier.notify({
-						title: 'Ace Logistics',
-						message: 'Success: The update has been downloaded. The tracker will restart soon...',
-						icon: "./assets/success.png",
-						timeout: 1,
-						appID: "Ace Logistics - JobTracker",
-						sound: true,
-						wait: true
-					});
-					decompress('Update_x64.zip', './').then(files => {
-						if (devmode == 1) console.log('Extraction done!');
-						RestartApplication();
-					});
-				} else {
-					notifier.notify({
-						title: 'Ace Logistics',
-						message: 'Success: The update has been downloaded. The tracker will restart soon...',
-						icon: "./assets/success.png",
-						timeout: 1,
-						appID: "Ace Logistics - JobTracker",
-						sound: true,
-						wait: true
-					
-					});
-					decompress('Update_x86.zip', './').then(files => {
-						if (devmode == 1) console.log('Extraction done!');
-						RestartApplication();
-					});
-				}
-			}, 90000);
-		}
-	}
-}
-
-/* Ingame-Data/API-Connection */
+/* Data-Logging & Transmission */
 etcars.on('data', function(data) {
 	if (devmode == 1) {
 		console.log('Data received.');
 	}
-	const GeneralInformation =
-	{
-		'isMultiplayer': data.jobData.isMultiplayer, /* Return: Boolean */
-		'isPaused': data.telemetry.game.paused, /* Return: Boolean */
-		'isDriving': data.telemetry.game.isDriving, /* Return:: Boolean */
-		'gameID': data.telemetry.game.gameID, /* Return: ets2 or ats */
-		'gameName': data.telemetry.game.gameName, /* Return: Euro Truck Simulator 2 or American Truck Simulator */
-		'truckMake': data.telemetry.truck.make, /* Return: String */
-		'truckModel': data.telemetry.truck.model, /* Return: String */
-		'truckPositionX': data.telemetry.truck.worldPlacement.x, /* X-Coordinate of the Truck */
-		'truckPositionY': data.telemetry.truck.worldPlacement.y, /* Y-Coordinate of the Truck */
-		'truckPositionZ': data.telemetry.truck.worldPlacement.z, /* Z-Coordinate of the Truck */
-		'jobRemainingTime': data.jobData.timeRemaining, /* Remaining time, until the delivery will be late */
-		'steamID': data.telemetry.user.steamID, /* Steam-UserID */
-		'steamUsername': data.telemetry.user.steamUsername, /* Steam-Username */
-		'currentSpeed': data.telemetry.truck.speed, /* Current Speed */
-		'currentJobDestination': data.telemetry.job.destinationCity, /* Current Job-Destination*/
-		'currentJobSource': data.telemetry.job.sourceCity,  /* Current Job-Source */
-		'eta': data.telemetry.navigation.lowestDistance, /* ETA */
-		'jobStatus': data.jobData.status, /* 1 = In progress, 2 = Finished, 3 = Cancelled */
-		'currentFuel': data.telemetry.truck.fuel.currentLitres  /* Current fuel in l */
-	}
-	const GeneralInformationJSON = JSON.stringify(GeneralInformation);
-	map.open('POST', 'https://api.d1strict.net/al/v2/map', true); /* Open the request to the Map API. */
+	APISaving(data);
+	MapTransmitting(data);
+});
+
+async function MapTransmitting(data) {
+	await onlineCheck();
+	var isPaused = data.telemetry.game.paused; /* Return: Boolean */
+	var isDriving = data.telemetry.game.isDriving; /* Return:: Boolean */
+	var gameID = data.telemetry.game.gameID; /* Return: ets2 or ats */
+	var gameName = data.telemetry.game.gameName; /* Return: Euro Truck Simulator 2 or American Truck Simulator */
+	var truckMake = data.telemetry.truck.make; /* Return: String */
+	var truckModel = data.telemetry.truck.model; /* Return: String */
+	var truckPositionX = data.telemetry.truck.worldPlacement.x; /* X-Coordinate of the Truck */
+	var truckPositionY = data.telemetry.truck.worldPlacement.y; /* Y-Coordinate of the Truck */
+	var truckPositionZ = data.telemetry.truck.worldPlacement.z; /* Z-Coordinate of the Truck */
+	var jobRemainingTime = data.jobData.timeRemaining; /* Remaining time, until the delivery will be late */
+	var steamID = data.telemetry.user.steamID; /* Steam-UserID */
+	var steamUsername = data.telemetry.user.steamUsername; /* Steam-Username */
+	var currentSpeed = data.telemetry.truck.speed; /* Current Speed */
+	var currentJobDestination = data.telemetry.job.destinationCity; /* Current Job-Destination*/
+	var currentJobSource = data.telemetry.job.sourceCity; /* Current Job-Source */
+	var eta = data.telemetry.navigation.lowestDistance; /* ETA */
+	var jobStatus = data.jobData.status; /* 1 = In progress, 2 = Finished, 3 = Cancelled */
+	var currentFuel = data.telemetry.truck.fuel.currentLitres; /* Current fuel in l */
+	map.open('POST', 'https://api.d1strict.net/al/1-1-0/map', true); /* Open the request to the Map API. */
 	map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
-	map.send(GeneralInformationJSON);
-	//map.send('x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey.toString() + ''); /* Sends data to the Map API. */
+	map.send('game=' + gameName + '&x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey + ''); /* Sends data to the Map API. */
 	if (devmode == 1) {
 		console.log('Position sent to the Map-API.');
-		console.log('JobInfo \n\n' + GeneralInformationJSON);
 	}
-	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
-		const JobInformation = {
-			'jobCargo': data.jobData.cargo, 
-			'jobCargoID': data.jobData.cargoID,
-			'jobMass': data.jobData.trailerMass,
-			'jobExIncome': data.jobData.income,
-			'JobSourceCity': data.jobData.sourceCity,
-			'jobSourceCityID': data.jobData.sourceCityID,
-			'jobSourceCompany': data.jobData.sourceCompany,
-			'jobSourceCompanyID': data.jobData.sourceCompanyID,
-			'jobDestinationCity': data.jobData.destinationCompany,
-			'jobDestinationCityID': data.jobData.destinationCompanyID,
-			'jobIsLate': data.jobData.isLate,
-			'jobFineSpeeding': data.jobData.speedingCount,
-			'jobDisctanceDriven': data.jobData.distanceDriven,
-			'jobFuelBurned': data.jobData.fuelBurned,
-			'jobFuelPurchased': data.jobData.fuelPurchased,
-			'jobFineCollisions': data.jobData.collisionCount,
-			'jobTrailerStartDamage': data.jobData.startTrailerDamage,
-			'jobTrailerFinishDamage': data.jobData.finishTrailerDamage,
-			'jobEngineStartDamage': data.jobData.startEngineDamage,
-			'jobEngineFinishDamage': data.jobData.finishEngineDamage,
-			'jobTransmissionStartDamage': data.jobData.startTransmissionDamage,
-			'jobCabinStartDamage': data.jobData.startCabinDamage,
-			'jobChassisStartDamage': data.jobData.startChassisDamage,
-			'jobWheelStartDamage': data.jobData.startWheelDamage,
-			'jobTransmissionFinishDamage': data.jobData.finishTransmissionDamage,
-			'jobCabinFinishDamage': data.jobData.startCabinDamage,
-			'jobChassisFinishDamage': data.jobData.startChassisDamage,
-			'jobWheelFinishDamage': data.jobData.finishWheelDamage,
-			'jobRealTimeStarted': data.jobData.realTimeStarted,
-			'jobRealTimeEnded': data.jobData.realTimeEnded,
-			'jobRealTimeTaken': data.jobData.realTimeTaken
-		}
-		request.open('POST', 'https://api.d1strict.net/al/v2/add', true); /* Open the request to the Job-API. */
-		request.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Job-API */
-		const JobInformationJSON = JSON.stringify(JobInformation); /*Converts the JobInformation into a JSON file */
-		request.send(JobInformationJSON); /*Sends the JSON file to the API*/
-		if (devmode == 1) {
-			console.log('Job finished, Connecting...');
-			console.log(JobInformation);
-		}
-		if (devmode == 1) {
-			console.log('Authentication with API key:' + apikey + '');
-		}
+}
 
+async function APISaving(data) {
+	await onlineCheck();
+	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
+		if (isOnlineCheck && isReachableCheck) {
+			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add', true); /* Open the request to the Job-API. */
+			request.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
+			request.send(data); /*Sends the JSON file to the API*/
+			if (devmode == 1) {
+				console.log('Job finished, Connecting...');
+				console.log('JobInfo \n\n' + data);
+			}
+			if (devmode == 1) {
+				console.log('Authentication with API key:' + apikey + '');
+			}
+		} else {
+			var fileid = Math.random().toString(36).substring(7);
+			fs.writeFileSync('./jobs/' + fileid + '.json', data);
+			retryCount = 0;
+			apistatus = "false";
+		}
 	} else if ((jobStatus == "1") && (apistatus == "false")) {
 		apistatus = "true";
 	}
-});
+};
 
 request.onload = function() {
 	if (this.status === 200) {
@@ -390,6 +491,7 @@ request.onload = function() {
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
+			id: 106,
 			wait: false
 		});
 		if (devmode == 1) {
@@ -397,78 +499,13 @@ request.onload = function() {
 			console.log(this.responseText);
 		}
 		apistatus = "false";
-	} else if (retryCount < 10) {
-		retryCount = retryCount + 1;
-		if (devmode == 1) {
-			console.log("API-Connection failed. Please check your internet connection! Retry: " + retryCount + "");
-		}
-	} else if (retryCount > 9) {
-		if (devmode == 1) {
-			console.log("API-Connection failed. Please check your internet connection! Cancelled.");
-		}
-		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Error: API-Connection failed.',
-			icon: "./assets/error.png",
-			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
-			sound: true,
-			wait: true
-		}, function() {
-			open('https://d1strict.de/form-user-response/10-submit-a-job/');
-		});
+	} else {
 		var fileid = Math.random().toString(36).substring(7);
-		fs.writeFileSync('./jobs/' + fileid + '.json',
-			JSON.stringify({
-				'isMultiplayer': isMultiplayer,
-				'gameID': gameID,
-				'gameName': gameName,
-				'truckMake': gameName,
-				'truckModel': truckModel,
-				'jobStatus': jobStatus,
-				'jobCargo': jobCargo,
-				'jobCargoID': jobCargoID,
-				'jobMass': jobMass,
-				'jobExIncome': jobExIncome,
-				'jobSourceCity': jobSourceCity,
-				'jobSourceCityID': jobSourceCityID,
-				'jobSourceCompany': jobSourceCompany,
-				'jobSourceCompanyID': jobSourceCompanyID,
-				'jobDestinationCity': jobDestinationCity,
-				'jobDestinationCityID': jobDestinationCityID,
-				'jobDestinationCompany': jobDestinationCompany,
-				'jobDestinationCompanyID': jobDestinationCompanyID,
-				'isLate': jobIsLate,
-				'jobFineSpeeding': jobFineSpeeding,
-				'jobDistanceDriven': jobDistanceDriven,
-				'jobFuelBurned': jobFuelBurned,
-				'jobFuelPurchased': jobFuelPurchased,
-				'jobFineCollisions': jobFineCollisions,
-				'jobTrailerStartDamage': jobTrailerStartDamage,
-				'jobTrailerFinishDamage': jobTrailerFinishDamage,
-				'jobEngineStartDamage': jobEngineFinishDamage,
-				'jobTransmissionStartDamage': jobTransmissionStartDamage,
-				'jobTransmissionFinishDamage': jobTransmissionFinishDamage,
-				'jobCabinStartDamage': jobCabinStartDamage,
-				'jobCabinFinishDamage': jobCabinFinishDamage,
-				'jobChassisStartDamage': jobChassisStartDamage,
-				'jobChassisFinishDamage': jobChassisFinishDamage,
-				'jobWheelStartDamage': jobWheelStartDamage,
-				'jobWheelFinishDamage': jobWheelFinishDamage,
-				'jobRealTimeStarted': jobRealTimeStarted,
-				'jobRealTimeTaken': jobRealTimeTaken,
-				'jobRealTimeEnded': jobRealTimeEnded,
-				'steamID': steamID,
-				'steamUsername': steamUsername,
-				'apikey': apikey,
-			})
-		);
-		retryCount = 0;
+		fs.writeFileSync('./jobs/' + fileid + '.json', data);
 		apistatus = "false";
 	}
-};
+}
 etcars.on('connect', function(data) {
-	retryCount = 0;
 	apistatus = "false";
 	if (devmode == 1) {
 		console.log('connected');
@@ -522,7 +559,7 @@ const AboutMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				UpdateApplication();
+				updateCheck("notification");
 			}
 		},
 	]
@@ -541,7 +578,7 @@ const JobMenu = {
 			}
 		},
 		{
-			title: 'Add locally stored jobs',
+			title: 'Submit locally stored jobs',
 			checked: false,
 			enabled: true,
 			click: () => {
@@ -595,6 +632,7 @@ function ExitApplication() {
 		timeout: 1,
 		appID: "Ace Logistics - JobTracker",
 		sound: true,
+		id: 107,
 		wait: false
 	});
 	setTimeout(() => {
@@ -604,94 +642,8 @@ function ExitApplication() {
 	}, 1000);
 }
 
-function UpdateApplication() {
-	updateserver.open("GET", "https://api.d1strict.net/al/v2/appversion.txt");
-	updateserver.send();
-	updateserver.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			if (updateserver.responseText > version) {
-				notifier.notify({
-					title: 'Ace Logistics',
-					message: 'Info: Update available. Update is being downloaded.',
-					icon: "./assets/info.png",
-					timeout: 1,
-					appID: "Ace Logistics - JobTracker",
-					sound: true,
-					wait: false
-				})
-				if (os.arch() == "x32") {
-					https.get("https://d1strict.de/media/220/", resp => resp.pipe(fs.createWriteStream(__dirname + '\\Updated_ALJobTracker.exe')));
-				} else if (os.arch() == "x64") {
-					https.get("https://d1strict.de/media/218/", resp => resp.pipe(fs.createWriteStream(__dirname + '\\Updated_ALJobTracker.exe')));
-				} else {
-					https.get("https://d1strict.de/media/220/", resp => resp.pipe(fs.createWriteStream(__dirname + '\\Updated_ALJobTracker.exe')));
-				}
-				console.log(__dirname + '\\Updated_ALJobTracker.exe');
-				setTimeout(() => {
-					if (os.arch() == "x32") {
-						notifier.notify({
-							title: 'Ace Logistics',
-							message: 'Success: The update has been downloaded. Execute the setup file under: ' + __dirname + '\\StartUpdate_x86.exe',
-							icon: "./assets/success.png",
-							timeout: 1,
-							appID: "Ace Logistics - JobTracker",
-							sound: true,
-							wait: true
-						}, function() {
-							exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x86.exe']);
-						});
-					} else if (os.arch() == "x64") {
-						notifier.notify({
-							title: 'Ace Logistics',
-							message: 'Success: The update has been downloaded. Execute the setup file under: ' + __dirname + '\\StartUpdate_x64.exe',
-							icon: "./assets/success.png",
-							timeout: 1,
-							appID: "Ace Logistics - JobTracker",
-							sound: true,
-							wait: true
-						}, function() {
-							exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x64.exe']);
-						});
-					} else {
-						notifier.notify({
-							title: 'Ace Logistics',
-							message: 'Success: The update has been downloaded. Execute the setup file under: ' + __dirname + '\\StartUpdate_x86.exe',
-							icon: "./assets/success.png",
-							timeout: 1,
-							appID: "Ace Logistics - JobTracker",
-							sound: true,
-							wait: true
-						}, function() {
-							exec('explorer.exe', ['/select,' + __dirname + '\\StartUpdate_x86.exe']);
-						});
-					}
-				}, 90000);
-			} else {
-				notifier.notify({
-					title: 'Ace Logistics',
-					message: 'Success: The JobTracker is up to date.',
-					icon: "./assets/success.png",
-					timeout: 1,
-					appID: "Ace Logistics - JobTracker",
-					sound: true,
-					wait: true
-				});
-			}
-		} else if (this.readyState == 4 && this.status != 200) {
-			notifier.notify({
-				title: 'Ace Logistics',
-				message: 'Error: The update check cannot be performed. Try again later.',
-				icon: "./assets/error.png",
-				timeout: 1,
-				appID: "Ace Logistics - JobTracker",
-				sound: true,
-				wait: true
-			});
-		}
-	}
-}
-
 function RestartApplication() {
+	restartDRP();
 	setTimeout(function() {
 		exitHook(() => {
 			require("child_process").spawn(process.argv.shift(), process.argv, {
@@ -718,6 +670,7 @@ exitHook(() => {
 		timeout: 1,
 		appID: "Ace Logistics - JobTracker",
 		sound: true,
+		id: 107,
 		wait: false
 	});
 	setTimeout(() => {

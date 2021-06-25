@@ -1,8 +1,11 @@
 {
   "dependencies": {
+    "crypto": "^1.0.1",
     "etcars-node-client": "^1.0.4",
     "exit-hook": "^2.2.1",
     "https": "^1.0.0",
+    "is-online": "^9.0.1",
+    "is-reachable": "^5.0.0",
     "node-notifier": "^10.0.0",
     "open": "^8.2.0",
     "os": "^0.1.1",
