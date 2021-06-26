@@ -54,7 +54,7 @@ async function onlineCheck() {
 /* Checking for - and installing updates */
 async function updateCheck(notification) {
 	await onlineCheck();
-	if (isOnlineCheck && isReachableCheck) {
+	;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		updateserver.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
 		updateserver.send();
 		updateserver.onreadystatechange = function() {
@@ -115,7 +115,7 @@ async function updateCheck(notification) {
 
 async function getUpdateFileHash(hex) {
 	await onlineCheck();
-	if (isOnlineCheck && isReachableCheck) {
+	;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		if (os.arch() == "x32") {
 			filehashCheck.open("GET", "https://api.d1strict.net/al/1-1-0/filehash86.txt");
 		} else if (os.arch() == "x64") {
@@ -170,13 +170,13 @@ async function getUpdateFileHash(hex) {
 
 async function downloadUpdate(url, dest, cb) {
 	await onlineCheck();
-	if (isOnlineCheck && isReachableCheck) {
+	;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		var file = fs.createWriteStream(dest);
 		var request = https.get(url, function(response) {
 			response.pipe(file);
 			file.on('finish', function() {
 				file.close(cb); // close() is async, call cb after close completes.
-				const fileBuffer = fs.readFileSync('myfile.js');
+				const fileBuffer = fs.readFileSync(file);
 				const hashSum = crypto.createHash('sha256');
 				hashSum.update(fileBuffer);
 				const hex = hashSum.digest('hex');
@@ -203,26 +203,30 @@ async function downloadUpdate(url, dest, cb) {
 /* Submit of local-saved Jobs */
 async function submitLocalJobs() {
 	await onlineCheck();
-	if (isOnlineCheck && isReachableCheck) {
+	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		fs.readdir("./jobs/", (err, files) => {
 			if (err) throw err;
 			files.forEach(file => {
 				var jsondata = fs.readFileSync("./jobs/" + file + "", 'utf8');
-				if (jsondata = " ") {
-					fs.unlink()('./jobs/' + file + '', (err) => {
-						if (err) throw err;
-					});
+				if (files.length == 0) {
+					fs.unlink('./jobs/' + file + '', (err) => {
+						if (err && devmode == 1) {
+						  console.log(err)
+						  return
+						}
+					})
 				} else {
 					setTimeout(() => {
 						var content = JSON.parse(jsondata);
-						localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add', true); /* Open the request to the Job-API. */
+						console.log(content);
+						localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&dcnotification=no', true); /* Open the request to the Job-API. */
 						localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
-						localjobsender.send(content); /*Sends the JSON file to the API*/
+						localjobsender.send(JSON.stringify(content)); /*Sends the JSON file to the API*/
 						if (devmode == 1) {
 							console.log('Job finished, Connecting...');
 						}
 						filedeletion = './jobs/' + file + '';
-					}, 10000);
+					}, 65000);
 				}
 			});
 		})
@@ -252,12 +256,12 @@ localjobsender.onload = function() {
 			id: 104,
 			wait: false
 		});
-		fs.writeFile(filedeletion, " ", (err) => {
+		fs.writeFile(filedeletion, "", (err) => {
 			if (err) throw err;
 			if (devmode == 1) {
 				console.log("API connection successful:");
 				console.log(this.responseText);
-				console.log("\nLocal job is emptied and flagged for deletion.")
+				console.log("Local job is emptied and flagged for deletion.")
 			}
 		})
 	} else if (this.readyState == 4 && this.status != 200) {
@@ -283,7 +287,7 @@ function restartDRP() {
 		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err);
+					console.log(err)
 					return;
 				}
 				console.log(data.toString());
@@ -293,7 +297,7 @@ function restartDRP() {
 		exec(__dirname + '\\RebootDRP_x64.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err);
+					console.log(err)
 					return;
 				}
 				console.log(data.toString());
@@ -303,7 +307,7 @@ function restartDRP() {
 		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err);
+					console.log(err)
 					return;
 				}
 				console.log(data.toString());
@@ -321,7 +325,7 @@ function terminateDRP() {
 		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err);
+					console.log(err)
 					return;
 				}
 				console.log(data.toString());
@@ -331,7 +335,7 @@ function terminateDRP() {
 		exec(__dirname + '\\TerminateDRP_x64.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err);
+					console.log(err)
 					return;
 				}
 				console.log(data.toString());
@@ -341,7 +345,7 @@ function terminateDRP() {
 		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err);
+					console.log(err)
 					return;
 				}
 				console.log(data.toString());
@@ -460,8 +464,8 @@ async function MapTransmitting(data) {
 async function APISaving(data) {
 	await onlineCheck();
 	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
-		if (isOnlineCheck && isReachableCheck) {
-			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey='+apikey+'', true); /* Open the request to the Job-API. */
+		;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '', true); /* Open the request to the Job-API. */
 			request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
 			request.send(JSON.stringify(data)); /*Sends the JSON file to the API*/
 			if (devmode == 1) {
@@ -473,7 +477,7 @@ async function APISaving(data) {
 			}
 		} else {
 			var fileid = Math.random().toString(36).substring(7);
-			fs.writeFileSync('./jobs/' + fileid + '.json', data);
+			fs.writeFileSync('./jobs/' + fileid + '.json', JSON.stringify(data));
 			retryCount = 0;
 			apistatus = "false";
 		}
@@ -483,7 +487,7 @@ async function APISaving(data) {
 };
 
 request.onload = function() {
-	if (this.status === 200) {
+	if (this.readyState == 4 && this.status === 200) {
 		notifier.notify({
 			title: 'Ace Logistics',
 			message: 'Info: Job submitted.',
@@ -499,10 +503,20 @@ request.onload = function() {
 			console.log(this.responseText);
 		}
 		apistatus = "false";
-	} else {
+	} else if (this.readyState == 4 && this.status == 200){
 		var fileid = Math.random().toString(36).substring(7);
 		fs.writeFileSync('./jobs/' + fileid + '.json', data);
 		apistatus = "false";
+		notifier.notify({
+			title: 'Ace Logistics',
+			message: 'Info: Job locally saved.',
+			icon: "./assets/success.png",
+			timeout: 1,
+			appID: "Ace Logistics - JobTracker",
+			sound: true,
+			id: 106,
+			wait: false
+		});
 	}
 }
 etcars.on('connect', function(data) {
