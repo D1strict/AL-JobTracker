@@ -31,7 +31,7 @@ const isReachable = require('is-reachable');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
-var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
+var devmode = 1; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
@@ -425,6 +425,7 @@ etcars.on('data', function(data) {
 	if (devmode == 1) {
 		console.log('Data received.');
 	}
+	jobStatus = data.jobData.status; /* 1 = In progress, 2 = Finished, 3 = Cancelled */
 	APISaving(data);
 	MapTransmitting(data);
 });
@@ -447,7 +448,6 @@ async function MapTransmitting(data) {
 	var currentJobDestination = data.telemetry.job.destinationCity; /* Current Job-Destination*/
 	var currentJobSource = data.telemetry.job.sourceCity; /* Current Job-Source */
 	var eta = data.telemetry.navigation.lowestDistance; /* ETA */
-	var jobStatus = data.jobData.status; /* 1 = In progress, 2 = Finished, 3 = Cancelled */
 	var currentFuel = data.telemetry.truck.fuel.currentLitres; /* Current fuel in l */
 	map.open('POST', 'https://api.d1strict.net/al/1-1-0/map', true); /* Open the request to the Map API. */
 	map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
@@ -461,9 +461,10 @@ async function APISaving(data) {
 	await onlineCheck();
 	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
 		if (isOnlineCheck && isReachableCheck) {
-			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add', true); /* Open the request to the Job-API. */
+			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey='+apikey+'', true); /* Open the request to the Job-API. */
 			request.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
 			request.send(data); /*Sends the JSON file to the API*/
+			request.end();
 			if (devmode == 1) {
 				console.log('Job finished, Connecting...');
 				console.log('JobInfo \n\n' + data);
