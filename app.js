@@ -31,7 +31,7 @@ const isReachable = require('is-reachable');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
-var devmode = 1; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
+var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
@@ -462,8 +462,8 @@ async function APISaving(data) {
 	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
 		if (isOnlineCheck && isReachableCheck) {
 			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey='+apikey+'', true); /* Open the request to the Job-API. */
-			request.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
-			request.send(data); /*Sends the JSON file to the API*/
+			request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+			request.send(JSON.stringify(data)); /*Sends the JSON file to the API*/
 			request.end();
 			if (devmode == 1) {
 				console.log('Job finished, Connecting...');
