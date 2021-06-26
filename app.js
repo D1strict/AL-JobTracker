@@ -464,7 +464,6 @@ async function APISaving(data) {
 			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey='+apikey+'', true); /* Open the request to the Job-API. */
 			request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
 			request.send(JSON.stringify(data)); /*Sends the JSON file to the API*/
-			request.end();
 			if (devmode == 1) {
 				console.log('Job finished, Connecting...');
 				console.log('JobInfo \n\n' + data);
