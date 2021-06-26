@@ -17,7 +17,6 @@ var request = new XMLHttpRequest();
 var map = new XMLHttpRequest();
 var localjobsender = new XMLHttpRequest();
 var updateserver = new XMLHttpRequest();
-var filehashCheck = new XMLHttpRequest();
 const http = require('http');
 const https = require('https');
 const rp = require('request-promise');
@@ -53,8 +52,8 @@ async function onlineCheck() {
 
 /* Checking for - and installing updates */
 async function updateCheck(notification) {
-	await onlineCheck();
-	;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+	await onlineCheck();;
+	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		updateserver.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
 		updateserver.send();
 		updateserver.onreadystatechange = function() {
@@ -113,74 +112,37 @@ async function updateCheck(notification) {
 	}
 }
 
-async function getUpdateFileHash(hex) {
-	await onlineCheck();
-	;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		if (os.arch() == "x32") {
-			filehashCheck.open("GET", "https://api.d1strict.net/al/1-1-0/filehash86.txt");
-		} else if (os.arch() == "x64") {
-			filehashCheck.open("GET", "https://api.d1strict.net/al/1-1-0/filehash64.txt");
-		} else {
-			filehashCheck.open("GET", "https://api.d1strict.net/al/1-1-0/filehash64.txt");
-		}
-		filehashCheck.send();
-		filehashCheck.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-				if (filehashCheck.responseText == hex) {
-					notifier.notify({
-						title: 'Ace Logistics',
-						message: 'Success: The update has been downloaded successfully. The installation routine will be started in a few moments.',
-						icon: "./assets/success.png",
-						timeout: 1,
-						appID: "Ace Logistics - JobTracker",
-						sound: true,
-						id: 101,
-						wait: false
-					});
-					exec(os.tmpdir() + '\\Updated_ALJobTracker.exe', function(err, data) {
-						if (devmode == 1) {
-							if (err) {
-								console.log(err);
-								return;
-							}
-							console.log(data.toString());
-						}
-					})
-					setTimeout(() => {
-						terminateDRP();
-						systray.kill();
-					}, 5000);
-				} else {
-					updateCheck("corrupt");
-					notifier.notify({
-						title: 'Ace Logistics',
-						message: 'Warning: The file hash of the downloaded update does not match our records. Therefore, the update might be corrupt and will be downloaded again.',
-						icon: "./assets/warning.png",
-						timeout: 1,
-						appID: "Ace Logistics - JobTracker",
-						sound: true,
-						id: 101,
-						wait: true
-					});
-				}
-			}
-		}
-	}
-}
-
 async function downloadUpdate(url, dest, cb) {
-	await onlineCheck();
-	;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+	await onlineCheck();;
+	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		var file = fs.createWriteStream(dest);
 		var request = https.get(url, function(response) {
 			response.pipe(file);
 			file.on('finish', function() {
 				file.close(cb); // close() is async, call cb after close completes.
-				const fileBuffer = fs.readFileSync(file);
-				const hashSum = crypto.createHash('sha256');
-				hashSum.update(fileBuffer);
-				const hex = hashSum.digest('hex');
-				getUpdateFileHash(hex);
+				notifier.notify({
+					title: 'Ace Logistics',
+					message: 'Success: The update has been downloaded successfully. The installation routine will be started in a few moments.',
+					icon: "./assets/success.png",
+					timeout: 1,
+					appID: "Ace Logistics - JobTracker",
+					sound: true,
+					id: 101,
+					wait: false
+				});
+				exec(os.tmpdir() + '\\Updated_ALJobTracker.exe', function(err, data) {
+					if (devmode == 1) {
+						if (err) {
+							console.log(err);
+							return;
+						}
+						console.log(data.toString());
+					}
+				})
+				setTimeout(() => {
+					terminateDRP();
+					systray.kill();
+				}, 5000);
 			});
 		}).on('error', function(err) { // Handle errors
 			fs.unlink(dest); // Delete the file async. (But we don't check the result)
@@ -201,39 +163,53 @@ async function downloadUpdate(url, dest, cb) {
 }
 
 /* Submit of local-saved Jobs */
+var submitJobsRunnning = false;
 async function submitLocalJobs() {
-	await onlineCheck();
-	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		fs.readdir("./jobs/", (err, files) => {
-			if (err) throw err;
-			files.forEach(file => {
-				var jsondata = fs.readFileSync("./jobs/" + file + "", 'utf8');
-				if (files.length == 0) {
-					fs.unlink('./jobs/' + file + '', (err) => {
-						if (err && devmode == 1) {
-						  console.log(err)
-						  return
-						}
-					})
-				} else {
-					setTimeout(() => {
-						var content = JSON.parse(jsondata);
-						console.log(content);
-						localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&dcnotification=no', true); /* Open the request to the Job-API. */
-						localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
-						localjobsender.send(JSON.stringify(content)); /*Sends the JSON file to the API*/
-						if (devmode == 1) {
-							console.log('Job finished, Connecting...');
-						}
-						filedeletion = './jobs/' + file + '';
-					}, 65000);
-				}
+	if (!submitJobsRunnning) {
+		await onlineCheck();
+		if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+			fs.readdir("./jobs/", (err, files) => {
+				if (err) throw err;
+				files.forEach(file => {
+					var jsondata = fs.readFileSync("./jobs/" + file + "", 'utf8');
+					if (files.length == 0) {
+						fs.unlink('./jobs/' + file + '', (err) => {
+							if (err && devmode == 1) {
+								console.log(err)
+								return
+							}
+						})
+					} else {
+						setTimeout(() => {
+							var content = JSON.parse(jsondata);
+							console.log(content);
+							localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&dcnotification=no', true); /* Open the request to the Job-API. */
+							localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
+							localjobsender.send(JSON.stringify(content)); /*Sends the JSON file to the API*/
+							if (devmode == 1) {
+								console.log('Job finished, Connecting...');
+							}
+							filedeletion = './jobs/' + file + '';
+						}, 65000);
+					}
+				});
+			})
+		} else {
+			notifier.notify({
+				title: 'Ace Logistics',
+				message: 'Error: Local jobs could not be submitted.\nCheck your internet connection.',
+				icon: "./assets/error.png",
+				timeout: 1,
+				appID: "Ace Logistics - JobTracker",
+				sound: true,
+				id: 103,
+				wait: false
 			});
-		})
+		}
 	} else {
 		notifier.notify({
 			title: 'Ace Logistics',
-			message: 'Warning: Local jobs could not be submitted.\nCheck your internet connection.',
+			message: 'Warning: Local jobs are already submitted. Be patient for a moment.',
 			icon: "./assets/warning.png",
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
@@ -253,7 +229,7 @@ localjobsender.onload = function() {
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
-			id: 104,
+			id: 103,
 			wait: false
 		});
 		fs.writeFile(filedeletion, "", (err) => {
@@ -272,7 +248,7 @@ localjobsender.onload = function() {
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
-			id: 104,
+			id: 103,
 			wait: false
 		});
 	}
@@ -355,12 +331,11 @@ function terminateDRP() {
 }
 
 /* Removal of existing notifications */
-var notifyIDS = ['100', '101', '102', '103', '104', '105', '106', '107'];
+var notifyIDS = ["100", "101", "102", "103", "104", "105", "106", "107"];
 notifyIDS.forEach(notifyRemove);
-
-function notifyRemove(index) {
+function notifyRemove(item) {
 	notifier.notify({
-		'remove': index // to remove all group ID
+		'remove': item, // to remove all group ID
 	});
 }
 
@@ -464,7 +439,8 @@ async function MapTransmitting(data) {
 async function APISaving(data) {
 	await onlineCheck();
 	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
-		;if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+		;
+		if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '', true); /* Open the request to the Job-API. */
 			request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
 			request.send(JSON.stringify(data)); /*Sends the JSON file to the API*/
@@ -503,14 +479,14 @@ request.onload = function() {
 			console.log(this.responseText);
 		}
 		apistatus = "false";
-	} else if (this.readyState == 4 && this.status == 200){
+	} else if (this.readyState == 4 && this.status == 200) {
 		var fileid = Math.random().toString(36).substring(7);
 		fs.writeFileSync('./jobs/' + fileid + '.json', data);
 		apistatus = "false";
 		notifier.notify({
 			title: 'Ace Logistics',
 			message: 'Info: Job locally saved.',
-			icon: "./assets/success.png",
+			icon: "./assets/info.png",
 			timeout: 1,
 			appID: "Ace Logistics - JobTracker",
 			sound: true,
@@ -623,7 +599,6 @@ const ExitTrackerButton = {
 
 const systray = new SysTray({
 	menu: {
-		// you should use .png icon on macOS/Linux, and .ico format on Windows */
 		icon: os.platform() === 'win32' ? './assets/systray.ico' : './assets/systray.png',
 		title: 'Ace Logistics',
 		tooltip: 'Ace Logistics',
