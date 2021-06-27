@@ -516,7 +516,7 @@ const AboutMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				open('https://discord.gg/WrMg4CmVve');
+				open('https://discord.link/acelogisticsvtc');
 			}
 		},
 		{
