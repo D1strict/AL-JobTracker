@@ -430,7 +430,6 @@ async function MapTransmitting(data) {
 async function APISaving(data) {
 	await onlineCheck();
 	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
-		;
 		if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '', true); /* Open the request to the Job-API. */
 			request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
