@@ -41,6 +41,15 @@ onlineCheck();
 updateCheck();
 submitLocalJobs();
 restartDRP();
+/* Removal of existing notifications */
+var notifyIDS = ["100", "101", "102", "103", "104", "105", "106", "107"];
+notifyIDS.forEach(notifyRemove);
+
+function notifyRemove(item) {
+	notifier.notify({
+		'remove': item // to remove all group ID
+	});
+}
 
 /* Functions */
 
@@ -52,7 +61,7 @@ async function onlineCheck() {
 
 /* Checking for - and installing updates */
 async function updateCheck(notification) {
-	await onlineCheck();;
+	await onlineCheck();
 	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		updateserver.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
 		updateserver.send();
@@ -70,18 +79,7 @@ async function updateCheck(notification) {
 						dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
 					}
 					downloadUpdate(url, dest);
-					if (notification == "corrupt") {
-						notifier.notify({
-							title: 'Ace Logistics',
-							message: 'Info: Update is being downloaded.',
-							icon: "./assets/info.png",
-							timeout: 1,
-							appID: "Ace Logistics - JobTracker",
-							sound: true,
-							id: 100,
-							wait: false
-						})
-					} else if (notification == "notification") {
+					if (notification == "notification") {
 						notifier.notify({
 							title: 'Ace Logistics',
 							message: 'Info: Update available. Update is being downloaded.',
@@ -113,7 +111,7 @@ async function updateCheck(notification) {
 }
 
 async function downloadUpdate(url, dest, cb) {
-	await onlineCheck();;
+	await onlineCheck();
 	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
 		var file = fs.createWriteStream(dest);
 		var request = https.get(url, function(response) {
@@ -141,7 +139,9 @@ async function downloadUpdate(url, dest, cb) {
 				})
 				setTimeout(() => {
 					terminateDRP();
+					notifyIDS.forEach(notifyRemove);
 					systray.kill();
+					process.exit(1);
 				}, 5000);
 			});
 		}).on('error', function(err) { // Handle errors
@@ -328,15 +328,6 @@ function terminateDRP() {
 			}
 		});
 	}
-}
-
-/* Removal of existing notifications */
-var notifyIDS = ["100", "101", "102", "103", "104", "105", "106", "107"];
-notifyIDS.forEach(notifyRemove);
-function notifyRemove(item) {
-	notifier.notify({
-		'remove': item, // to remove all group ID
-	});
 }
 
 /* Process-Checking */
@@ -626,6 +617,7 @@ function ExitApplication() {
 	});
 	setTimeout(() => {
 		terminateDRP();
+		notifyIDS.forEach(notifyRemove);
 		systray.kill();
 		process.exit(1);
 	}, 1000);
@@ -641,6 +633,7 @@ function RestartApplication() {
 				stdio: "inherit"
 			});
 		});
+		notifyIDS.forEach(notifyRemove);
 		process.exit(1);
 	}, 3000);
 }
@@ -662,8 +655,7 @@ exitHook(() => {
 		id: 107,
 		wait: false
 	});
-	setTimeout(() => {
-		terminateDRP();
-		systray.kill();
-	}, 2000);
+	notifyIDS.forEach(notifyRemove);
+	terminateDRP();
+	systray.kill();
 });
