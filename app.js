@@ -41,6 +41,7 @@ onlineCheck();
 updateCheck();
 submitLocalJobs();
 restartDRP();
+
 /* Removal of existing notifications */
 var notifyIDS = ["100", "101", "102", "103", "104", "105", "106", "107"];
 notifyIDS.forEach(notifyRemove);
@@ -89,7 +90,7 @@ async function updateCheck(notification) {
 							sound: true,
 							id: 100,
 							wait: true
-						})
+						});
 					}
 				} else {
 					if (notification == "notification") {
@@ -102,11 +103,11 @@ async function updateCheck(notification) {
 							sound: true,
 							id: 100,
 							wait: true
-						})
+						});
 					}
 				}
 			}
-		}
+		};
 	}
 }
 
@@ -136,7 +137,7 @@ async function downloadUpdate(url, dest, cb) {
 						}
 						console.log(data.toString());
 					}
-				})
+				});
 				setTimeout(() => {
 					terminateDRP();
 					notifyIDS.forEach(notifyRemove);
@@ -175,10 +176,10 @@ async function submitLocalJobs() {
 					if (files.length == 0) {
 						fs.unlink('./jobs/' + file + '', (err) => {
 							if (err && devmode == 1) {
-								console.log(err)
-								return
+								console.log(err);
+								return;
 							}
-						})
+						});
 					} else {
 						setTimeout(() => {
 							var content = JSON.parse(jsondata);
@@ -193,7 +194,7 @@ async function submitLocalJobs() {
 						}, 65000);
 					}
 				});
-			})
+			});
 		} else {
 			notifier.notify({
 				title: 'Ace Logistics',
@@ -237,9 +238,9 @@ localjobsender.onload = function() {
 			if (devmode == 1) {
 				console.log("API connection successful:");
 				console.log(this.responseText);
-				console.log("Local job is emptied and flagged for deletion.")
+				console.log("Local job is emptied and flagged for deletion.");
 			}
-		})
+		});
 	} else if (this.readyState == 4 && this.status != 200) {
 		notifier.notify({
 			title: 'Ace Logistics',
@@ -263,7 +264,7 @@ function restartDRP() {
 		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err)
+					console.log(err);
 					return;
 				}
 				console.log(data.toString());
@@ -273,7 +274,7 @@ function restartDRP() {
 		exec(__dirname + '\\RebootDRP_x64.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err)
+					console.log(err);
 					return;
 				}
 				console.log(data.toString());
@@ -283,7 +284,7 @@ function restartDRP() {
 		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err)
+					console.log(err);
 					return;
 				}
 				console.log(data.toString());
@@ -301,7 +302,7 @@ function terminateDRP() {
 		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err)
+					console.log(err);
 					return;
 				}
 				console.log(data.toString());
@@ -311,7 +312,7 @@ function terminateDRP() {
 		exec(__dirname + '\\TerminateDRP_x64.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err)
+					console.log(err);
 					return;
 				}
 				console.log(data.toString());
@@ -321,7 +322,7 @@ function terminateDRP() {
 		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
 			if (devmode == 1) {
 				if (err) {
-					console.log(err)
+					console.log(err);
 					return;
 				}
 				console.log(data.toString());
@@ -351,7 +352,7 @@ rp({
 			process.exit(1);
 		}, 2000);
 	} else {
-		throw new Error(`statusCode ${res.statusCode}`)
+		throw new Error(`statusCode ${res.statusCode}`);
 	}
 }).catch(err => {
 	const server = http.createServer((req, res) => {
@@ -450,7 +451,7 @@ async function APISaving(data) {
 	} else if ((jobStatus == "1") && (apistatus == "false")) {
 		apistatus = "true";
 	}
-};
+}
 
 request.onload = function() {
 	if (this.readyState == 4 && this.status === 200) {
@@ -484,7 +485,7 @@ request.onload = function() {
 			wait: false
 		});
 	}
-}
+};
 etcars.on('connect', function(data) {
 	apistatus = "false";
 	if (devmode == 1) {
@@ -543,7 +544,7 @@ const AboutMenu = {
 			}
 		},
 	]
-}
+};
 
 const JobMenu = {
 	title: 'Jobs',
@@ -566,7 +567,7 @@ const JobMenu = {
 			}
 		}
 	]
-}
+};
 
 const RestartTrackerButton = {
 	title: 'Restart',
@@ -575,7 +576,7 @@ const RestartTrackerButton = {
 	click: () => {
 		RestartApplication();
 	}
-}
+};
 
 
 const ExitTrackerButton = {
@@ -585,7 +586,7 @@ const ExitTrackerButton = {
 	click: () => {
 		ExitApplication();
 	}
-}
+};
 
 const systray = new SysTray({
 	menu: {
@@ -601,7 +602,7 @@ const systray = new SysTray({
 	},
 	debug: false,
 	copyDir: false
-})
+});
 //Functions */
 function ExitApplication() {
 	notifier.notify({
@@ -639,9 +640,9 @@ function RestartApplication() {
 
 systray.onClick(action => {
 	if (action.item.click != null) {
-		action.item.click()
+		action.item.click();
 	}
-})
+});
 
 exitHook(() => {
 	notifier.notify({
