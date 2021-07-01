@@ -17,6 +17,7 @@ var request = new XMLHttpRequest();
 var map = new XMLHttpRequest();
 var localjobsender = new XMLHttpRequest();
 var updateserver = new XMLHttpRequest();
+var updateserverSilent = new XMLHttpRequest();
 const http = require('http');
 const https = require('https');
 const rp = require('request-promise');
@@ -30,17 +31,14 @@ const isReachable = require('is-reachable');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
-var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
+var devmode = 1; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
 var apikey = ""; /* INSERT API-KEY */
 
-/* StartUp */
-onlineCheck();
-updateCheck();
-submitLocalJobs();
-restartDRP();
+const VTCName = "Ace Logistics";
+const APPName = "JobTracker"
 
 /* Removal of existing notifications */
 var notifyIDS = ["100", "101", "102", "103", "104", "105", "106", "107"];
@@ -61,53 +59,101 @@ async function onlineCheck() {
 }
 
 /* Checking for - and installing updates */
-async function updateCheck(notification) {
-	await onlineCheck();
-	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		updateserver.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
-		updateserver.send();
-		updateserver.onreadystatechange = function() {
-			if (this.readyState == 4 && this.status == 200) {
-				if (updateserver.responseText > version) {
-					if (os.arch() == "x32") {
-						url = "https://d1strict.de/media/218/";
-						dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-					} else if (os.arch() == "x64") {
-						url = "https://d1strict.de/media/220/";
-						dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-					} else {
-						url = "https://d1strict.de/media/220/";
-						dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-					}
-					downloadUpdate(url, dest);
-					if (notification == "notification") {
-						notifier.notify({
-							title: 'Ace Logistics',
-							message: 'Info: Update available. Update is being downloaded.',
-							icon: "./assets/info.png",
-							timeout: 1,
-							appID: "Ace Logistics - JobTracker",
-							sound: true,
-							id: 100,
-							wait: true
-						});
-					}
+if (updateserver) {
+	updateserver.onreadystatechange = function() {
+		if ((updateserver.readyState == 4) && (updateserver.status == 200)) {
+			if (updateserver.responseText > version) {
+				if (os.arch() == "x32") {
+					url = "https://d1strict.de/media/218/";
+					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+				} else if (os.arch() == "x64") {
+					url = "https://d1strict.de/media/220/";
+					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
 				} else {
-					if (notification == "notification") {
-						notifier.notify({
-							title: 'Ace Logistics',
-							message: 'Info: The JobTracker is up to date.',
-							icon: "./assets/info.png",
-							timeout: 1,
-							appID: "Ace Logistics - JobTracker",
-							sound: true,
-							id: 100,
-							wait: true
-						});
-					}
+					url = "https://d1strict.de/media/220/";
+					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
 				}
+				downloadUpdate(url, dest);
+				notifier.notify({
+					title: APPName,
+					message: 'Info: Update available. Update is being downloaded.',
+					icon: "./assets/info.png",
+					timeout: 1,
+					appID: VTCName,
+					sound: true,
+					id: 100,
+					wait: true
+				});
+			} else {
+				notifier.notify({
+					title: APPName,
+					message: 'Info: The JobTracker is up to date.',
+					icon: "./assets/info.png",
+					timeout: 1,
+					appID: VTCName,
+					sound: true,
+					id: 100,
+					wait: true
+				});
 			}
 		};
+	}
+}
+
+if (updateserverSilent) {
+	updateserverSilent.onreadystatechange = function() {
+		if ((updateserverSilent.readyState == 4) && (updateserverSilent.status == 200)) {
+			if (updateserverSilent.responseText > version) {
+				if (os.arch() == "x32") {
+					url = "https://d1strict.de/media/218/";
+					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+				} else if (os.arch() == "x64") {
+					url = "https://d1strict.de/media/220/";
+					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+				} else {
+					url = "https://d1strict.de/media/220/";
+					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+				}
+				downloadUpdate(url, dest);
+				notifier.notify({
+					title: APPName,
+					message: 'Info: Update available. Update is being downloaded.',
+					icon: "./assets/info.png",
+					timeout: 1,
+					appID: VTCName,
+					sound: true,
+					id: 100,
+					wait: true
+				});
+			}
+		};
+	}
+}
+
+async function updateCheck() {
+	await onlineCheck();
+	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+		updateserverSilent.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
+		updateserverSilent.send();
+	} else {
+		notifier.notify({
+			title: APPName,
+			message: 'Error: It was not possible to check for updates because no connection could be established.\nPlease check your internet connection.',
+			icon: "./assets/error.png",
+			timeout: 1,
+			appID: VTCName,
+			sound: true,
+			id: 100,
+			wait: false
+		});
+	}
+}
+
+async function updateCheckSilent() {
+	await onlineCheck();
+	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+		updateserverSilent.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
+		updateserverSilent.send();
 	}
 }
 
@@ -120,11 +166,11 @@ async function downloadUpdate(url, dest, cb) {
 			file.on('finish', function() {
 				file.close(cb); // close() is async, call cb after close completes.
 				notifier.notify({
-					title: 'Ace Logistics',
-					message: 'Success: The update has been downloaded successfully. The installation routine will be started in a few moments.',
+					title: APPName,
+					message: 'Success: The update has been downloaded successfully.\nThe installation routine will be started in a few moments.',
 					icon: "./assets/success.png",
 					timeout: 1,
-					appID: "Ace Logistics - JobTracker",
+					appID: VTCName,
 					sound: true,
 					id: 101,
 					wait: false
@@ -149,11 +195,11 @@ async function downloadUpdate(url, dest, cb) {
 			fs.unlink(dest); // Delete the file async. (But we don't check the result)
 			if (cb && devmode == 1) cb(err.message);
 			notifier.notify({
-				title: 'Ace Logistics',
+				title: APPName,
 				message: 'Error: An error has occurred. The update could not be downloaded. Try again later.',
 				icon: "./assets/error.png",
 				timeout: 1,
-				appID: "Ace Logistics - JobTracker",
+				appID: VTCName,
 				sound: true,
 				id: 102,
 				wait: true
@@ -164,6 +210,40 @@ async function downloadUpdate(url, dest, cb) {
 }
 
 /* Submit of local-saved Jobs */
+if (localjobsender) {
+	localjobsender.onreadystatechange = function() {
+		if ((localjobsender.readyState == 4) && (localjobsender.status == 200)) {
+			notifier.notify({
+				title: APPName,
+				message: 'Info: local Job submitted.',
+				icon: "./assets/success.png",
+				timeout: 1,
+				appID: VTCName,
+				sound: true,
+				id: 103,
+				wait: false
+			});
+			fs.writeFile(filedeletion, "", (err) => {
+				if (err) throw err;
+				if (devmode == 1) {
+					console.log("API connection successful:\n\n" + localjobsender.responseText + "\n\nLocal job is emptied and flagged for deletion.");
+				}
+			});
+		} else if ((localjobsender.readyState == 4) && (localjobsender.status !== 200)) {
+			notifier.notify({
+				title: APPName,
+				message: 'Error: Local jobs could not be submitted.',
+				icon: "./assets/error.png",
+				timeout: 1,
+				appID: VTCName,
+				sound: true,
+				id: 103,
+				wait: false
+			});
+		}
+	};
+}
+
 var submitJobsRunnning = false;
 async function submitLocalJobs() {
 	if (!submitJobsRunnning) {
@@ -188,7 +268,7 @@ async function submitLocalJobs() {
 							localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
 							localjobsender.send(JSON.stringify(content)); /*Sends the JSON file to the API*/
 							if (devmode == 1) {
-								console.log('Job finished, Connecting...');
+								console.log('Job found, Connecting...');
 							}
 							filedeletion = './jobs/' + file + '';
 						}, 65000);
@@ -197,11 +277,11 @@ async function submitLocalJobs() {
 			});
 		} else {
 			notifier.notify({
-				title: 'Ace Logistics',
+				title: APPName,
 				message: 'Error: Local jobs could not be submitted.\nCheck your internet connection.',
 				icon: "./assets/error.png",
 				timeout: 1,
-				appID: "Ace Logistics - JobTracker",
+				appID: VTCName,
 				sound: true,
 				id: 103,
 				wait: false
@@ -209,11 +289,11 @@ async function submitLocalJobs() {
 		}
 	} else {
 		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Warning: Local jobs are already submitted. Be patient for a moment.',
+			title: APPName,
+			message: 'Warning: Local jobs are already submitted.\nBe patient for a moment.',
 			icon: "./assets/warning.png",
 			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
+			appID: VTCName,
 			sound: true,
 			id: 103,
 			wait: false
@@ -221,114 +301,22 @@ async function submitLocalJobs() {
 	}
 }
 
-localjobsender.onload = function() {
-	if (this.readyState == 4 && this.status === 200) {
-		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Info: local Job submitted.',
-			icon: "./assets/success.png",
-			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
-			sound: true,
-			id: 103,
-			wait: false
-		});
-		fs.writeFile(filedeletion, "", (err) => {
-			if (err) throw err;
-			if (devmode == 1) {
-				console.log("API connection successful:");
-				console.log(this.responseText);
-				console.log("Local job is emptied and flagged for deletion.");
-			}
-		});
-	} else if (this.readyState == 4 && this.status != 200) {
-		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Error: Local jobs could not be submitted.',
-			icon: "./assets/error.png",
-			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
-			sound: true,
-			id: 103,
-			wait: false
-		});
-	}
-};
-
 /* Restart of the Discord-Rich Presence */
 function restartDRP() {
-	if (devmode == 1) {
-		console.log("Restart DRP...");
-	}
-	if (os.arch() == "x32") {
-		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
-			if (devmode == 1) {
-				if (err) {
-					console.log(err);
-					return;
-				}
-				console.log(data.toString());
-			}
-		});
-	} else if (os.arch() == "x64") {
-		exec(__dirname + '\\RebootDRP_x64.exe', function(err, data) {
-			if (devmode == 1) {
-				if (err) {
-					console.log(err);
-					return;
-				}
-				console.log(data.toString());
-			}
-		});
-	} else {
-		exec(__dirname + '\\RebootDRP_x86.exe', function(err, data) {
-			if (devmode == 1) {
-				if (err) {
-					console.log(err);
-					return;
-				}
-				console.log(data.toString());
-			}
-		});
-	}
+	require('child_process').exec('cmd /c ./RebootDRP.bat', function() {
+		if (devmode == 1) {
+			console.log("Restart DRP...");
+		}
+	});
 }
 
 /* Termination of the Discord-Rich Presence */
 function terminateDRP() {
-	if (devmode == 1) {
-		console.log("Terminate DRP...");
-	}
-	if (os.arch() == "x32") {
-		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
-			if (devmode == 1) {
-				if (err) {
-					console.log(err);
-					return;
-				}
-				console.log(data.toString());
-			}
-		});
-	} else if (os.arch() == "x64") {
-		exec(__dirname + '\\TerminateDRP_x64.exe', function(err, data) {
-			if (devmode == 1) {
-				if (err) {
-					console.log(err);
-					return;
-				}
-				console.log(data.toString());
-			}
-		});
-	} else {
-		exec(__dirname + '\\TerminateDRP_x86.exe', function(err, data) {
-			if (devmode == 1) {
-				if (err) {
-					console.log(err);
-					return;
-				}
-				console.log(data.toString());
-			}
-		});
-	}
+	require('child_process').exec('cmd /c ./TerminateDRP.bat', function() {
+		if (devmode == 1) {
+			console.log("Terminate DRP...");
+		}
+	});
 }
 
 /* Process-Checking */
@@ -338,11 +326,11 @@ rp({
 }).then(res => {
 	if (res.statusCode === 200) {
 		notifier.notify({
-			title: 'Ace Logistics',
+			title: APPName,
 			message: 'Error: Tracker could not be started, it is already running.',
 			icon: "./assets/error.png",
 			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
+			appID: VTCName,
 			sound: true,
 			id: 105,
 			wait: false
@@ -366,40 +354,56 @@ rp({
 	});
 	server.listen(AlTPort);
 	server.unref();
-	// proceed with the rest of your process initialization here
+	// StartUp
+	onlineCheck();
+	updateCheckSilent();
+	submitLocalJobs();
+	restartDRP();
 	console.log("Tracker is running.");
 	if (devmode == 1) {
 		console.log("Process-Check successfully. Continue.");
 	}
 	etcars.connect();
 	notifier.notify({
-		title: 'Ace Logistics',
-		message: 'JobTracker started.',
+		title: APPName,
+		message: APPName + ' started.',
 		icon: "./assets/logo.png",
 		timeout: 1,
-		appID: "Ace Logistics - JobTracker",
+		appID: VTCName,
 		sound: true,
 		id: 105,
 		wait: false
 	});
-	restartDRP();
-	submitLocalJobs();
 	if (devmode == 1) {
 		setInterval(() => {
-			console.log("still running");
-		}, 1000);
+			console.log(APPName  + " still running");
+		}, 30000);
 	}
 });
 
 /* Data-Logging & Transmission */
 etcars.on('data', function(data) {
 	if (devmode == 1) {
-		console.log('Data received.');
+		console.log('etcars-data changed.');
 	}
 	jobStatus = data.jobData.status; /* 1 = In progress, 2 = Finished, 3 = Cancelled */
 	APISaving(data);
 	MapTransmitting(data);
 });
+
+if (map) {
+	map.onreadystatechange = function() {
+		if ((map.readyState == 4) && (map.status == 200)) {
+			if (devmode == 1) {
+				console.log("Data sent to MAP-API.\n\n" + map.responseText);
+			}
+		} else if ((map.readyState == 4) && (map.status != 200)) {
+			if (devmode == 1) {
+				console.log("Data not sent to MAP-API.\n\n" + map.responseText);
+			}
+		}
+	};
+}
 
 async function MapTransmitting(data) {
 	await onlineCheck();
@@ -423,69 +427,74 @@ async function MapTransmitting(data) {
 	map.open('POST', 'https://api.d1strict.net/al/1-1-0/map', true); /* Open the request to the Map API. */
 	map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
 	map.send('game=' + gameName + '&x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey + ''); /* Sends data to the Map API. */
-	if (devmode == 1) {
-		console.log('Position sent to the Map-API.');
-	}
+}
+
+if (request) {
+	request.onreadystatechange = function() {
+		if ((request.readyState == 4) && (request.status == 200)) {
+			notifier.notify({
+				title: APPName,
+				message: 'Info: Job submitted.',
+				icon: "./assets/success.png",
+				timeout: 1,
+				appID: VTCName,
+				sound: true,
+				id: 106,
+				wait: false
+			});
+			if (devmode == 1) {
+				console.log("Connection successful:");
+				console.log(request.responseText);
+			}
+		} else if ((request.readyState == 4) && (request.status != 200)) {
+			var fileid = Math.random().toString(36).substring(7);
+			fs.writeFileSync('./jobs/' + fileid + '.json', data);
+			apistatus = "false";
+			notifier.notify({
+				title: APPName,
+				message: 'Info: Job locally saved.',
+				icon: "./assets/info.png",
+				timeout: 1,
+				appID: VTCName,
+				sound: true,
+				id: 106,
+				wait: false
+			});
+		}
+	};
 }
 
 async function APISaving(data) {
 	await onlineCheck();
-	if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
-		if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-			request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '', true); /* Open the request to the Job-API. */
-			request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
-			request.send(JSON.stringify(data)); /*Sends the JSON file to the API*/
-			if (devmode == 1) {
-				console.log('Job finished, Connecting...');
-				console.log('JobInfo \n\n' + data);
+	if (!ApiSavingRunning) {
+		if ((jobStatus == "1") && (apistatus == "false")) {
+			if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+				request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
+				request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+				request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
+				if (devmode == 1) {
+					console.log('Job started, Connecting...\nJobInfo \n\n' + data + '\n\nAuthentication with API key:' + apikey + '');
+				}
+				apistatus = "true";
 			}
-			if (devmode == 1) {
-				console.log('Authentication with API key:' + apikey + '');
+		} else if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
+			if ((isOnlineCheck == true) && (isReachableCheck == true)) {
+				request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
+				request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+				request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
+				if (devmode == 1) {
+					console.log('Job ended, Connecting...\nJobInfo \n\n' + data + '\n\nAuthentication with API key:' + apikey + '');
+				}
+			} else {
+				var fileid = Math.random().toString(36).substring(7);
+				fs.writeFileSync('./jobs/' + fileid + '.json', JSON.stringify(data));
+				retryCount = 0;
+				apistatus = "false";
 			}
-		} else {
-			var fileid = Math.random().toString(36).substring(7);
-			fs.writeFileSync('./jobs/' + fileid + '.json', JSON.stringify(data));
-			retryCount = 0;
-			apistatus = "false";
 		}
-	} else if ((jobStatus == "1") && (apistatus == "false")) {
-		apistatus = "true";
 	}
 }
 
-request.onload = function() {
-	if (this.readyState == 4 && this.status === 200) {
-		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Info: Job submitted.',
-			icon: "./assets/success.png",
-			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
-			sound: true,
-			id: 106,
-			wait: false
-		});
-		if (devmode == 1) {
-			console.log("API connection successful:");
-			console.log(this.responseText);
-		}
-		apistatus = "false";
-	} else if (this.readyState == 4 && this.status == 200) {
-		var fileid = Math.random().toString(36).substring(7);
-		fs.writeFileSync('./jobs/' + fileid + '.json', data);
-		apistatus = "false";
-		notifier.notify({
-			title: 'Ace Logistics',
-			message: 'Info: Job locally saved.',
-			icon: "./assets/info.png",
-			timeout: 1,
-			appID: "Ace Logistics - JobTracker",
-			sound: true,
-			id: 106,
-			wait: false
-		});
-	}
-};
 etcars.on('connect', function(data) {
 	apistatus = "false";
 	if (devmode == 1) {
@@ -540,7 +549,7 @@ const AboutMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				updateCheck("notification");
+				updateCheck();
 			}
 		},
 	]
@@ -590,8 +599,8 @@ const ExitTrackerButton = {
 
 const systray = new SysTray({
 	menu: {
-		icon: os.platform() === 'win32' ? './assets/systray.ico' : './assets/systray.png',
-		title: 'Ace Logistics',
+		icon: './assets/systray.ico',
+		title: APPName,
 		tooltip: 'Ace Logistics',
 		items: [
 			JobMenu,
@@ -606,11 +615,11 @@ const systray = new SysTray({
 //Functions */
 function ExitApplication() {
 	notifier.notify({
-		title: 'Ace Logistics',
-		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the JobTracker again.',
+		title: APPName,
+		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the' + APPName + ' again.',
 		icon: "./assets/warning.png",
 		timeout: 1,
-		appID: "Ace Logistics - JobTracker",
+		appID: VTCName,
 		sound: true,
 		id: 107,
 		wait: false
@@ -624,7 +633,7 @@ function ExitApplication() {
 }
 
 function RestartApplication() {
-	restartDRP();
+	terminateDRP();
 	setTimeout(function() {
 		exitHook(() => {
 			require("child_process").spawn(process.argv.shift(), process.argv, {
@@ -646,11 +655,11 @@ systray.onClick(action => {
 
 exitHook(() => {
 	notifier.notify({
-		title: 'Ace Logistics',
-		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the JobTracker again.',
+		title: APPName,
+		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the' + APPName + ' again.',
 		icon: "./assets/warning.png",
 		timeout: 1,
-		appID: "Ace Logistics - JobTracker",
+		appID: VTCName,
 		sound: true,
 		id: 107,
 		wait: false
