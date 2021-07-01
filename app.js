@@ -31,7 +31,7 @@ const isReachable = require('is-reachable');
 
 /* Configuration */
 etcars.enableDebug = false; /* to enable debug console.log and console.error */
-var devmode = 1; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
+var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
 const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
