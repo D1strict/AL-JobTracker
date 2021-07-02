@@ -13,11 +13,8 @@ const notifier = require('node-notifier');
 var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
 const fs = require('fs');
 var etcars = new ETCarsClient();
+etcars.connect();
 var request = new XMLHttpRequest();
-var map = new XMLHttpRequest();
-var localjobsender = new XMLHttpRequest();
-var updateserver = new XMLHttpRequest();
-var updateserverSilent = new XMLHttpRequest();
 const http = require('http');
 const https = require('https');
 const rp = require('request-promise');
@@ -30,7 +27,7 @@ const isOnline = require('is-online');
 const isReachable = require('is-reachable');
 
 /* Configuration */
-etcars.enableDebug = false; /* to enable debug console.log and console.error */
+etcars.enableDebug = true; /* to enable debug console.log and console.error */
 var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
@@ -38,7 +35,7 @@ const AlTPath = '/AlT'; /* Random path. Should not contain special characters or
 var apikey = ""; /* INSERT API-KEY */
 
 const VTCName = "Ace Logistics";
-const APPName = "JobTracker"
+const APPName = "JobTracker";
 
 /* Removal of existing notifications */
 var notifyIDS = ["100", "101", "102", "103", "104", "105", "106", "107"];
@@ -59,82 +56,53 @@ async function onlineCheck() {
 }
 
 /* Checking for - and installing updates */
-if (updateserver) {
-	updateserver.onreadystatechange = function() {
-		if ((updateserver.readyState == 4) && (updateserver.status == 200)) {
-			if (updateserver.responseText > version) {
-				if (os.arch() == "x32") {
-					url = "https://d1strict.de/media/218/";
-					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-				} else if (os.arch() == "x64") {
-					url = "https://d1strict.de/media/220/";
-					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-				} else {
-					url = "https://d1strict.de/media/220/";
-					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-				}
-				downloadUpdate(url, dest);
-				notifier.notify({
-					title: APPName,
-					message: 'Info: Update available. Update is being downloaded.',
-					icon: "./assets/info.png",
-					timeout: 1,
-					appID: VTCName,
-					sound: true,
-					id: 100,
-					wait: true
-				});
-			} else {
-				notifier.notify({
-					title: APPName,
-					message: 'Info: The JobTracker is up to date.',
-					icon: "./assets/info.png",
-					timeout: 1,
-					appID: VTCName,
-					sound: true,
-					id: 100,
-					wait: true
-				});
-			}
-		};
-	}
-}
-
-if (updateserverSilent) {
-	updateserverSilent.onreadystatechange = function() {
-		if ((updateserverSilent.readyState == 4) && (updateserverSilent.status == 200)) {
-			if (updateserverSilent.responseText > version) {
-				if (os.arch() == "x32") {
-					url = "https://d1strict.de/media/218/";
-					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-				} else if (os.arch() == "x64") {
-					url = "https://d1strict.de/media/220/";
-					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-				} else {
-					url = "https://d1strict.de/media/220/";
-					dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-				}
-				downloadUpdate(url, dest);
-				notifier.notify({
-					title: APPName,
-					message: 'Info: Update available. Update is being downloaded.',
-					icon: "./assets/info.png",
-					timeout: 1,
-					appID: VTCName,
-					sound: true,
-					id: 100,
-					wait: true
-				});
-			}
-		};
-	}
-}
-
 async function updateCheck() {
 	await onlineCheck();
 	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		updateserverSilent.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
-		updateserverSilent.send();
+		var updateserver = new XMLHttpRequest();
+		if (updateserver) {
+			updateserver.onreadystatechange = function() {
+				if ((updateserver.readyState == 4) && (updateserver.status == 200)) {
+					if (updateserver.responseText > version) {
+						if (os.arch() == "x32") {
+							url = "https://d1strict.de/media/218/";
+							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+						} else if (os.arch() == "x64") {
+							url = "https://d1strict.de/media/220/";
+							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+						} else {
+							url = "https://d1strict.de/media/220/";
+							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+						}
+						downloadUpdate(url, dest);
+						notifier.notify({
+							title: APPName,
+							message: 'Info: Update available. Update is being downloaded.',
+							icon: "./assets/info.png",
+							timeout: 1,
+							appID: VTCName,
+							sound: true,
+							id: 100,
+							wait: true
+						});
+					} else {
+						notifier.notify({
+							title: APPName,
+							message: 'Info: The JobTracker is up to date.',
+							icon: "./assets/info.png",
+							timeout: 1,
+							appID: VTCName,
+							sound: true,
+							id: 100,
+							wait: true
+						});
+						console.log(updateserver.responseText);
+					}
+				}
+			};
+			updateserver.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
+			updateserver.send();
+		}
 	} else {
 		notifier.notify({
 			title: APPName,
@@ -152,8 +120,38 @@ async function updateCheck() {
 async function updateCheckSilent() {
 	await onlineCheck();
 	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		updateserverSilent.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
-		updateserverSilent.send();
+		var updateserverSilent = new XMLHttpRequest();
+		if (updateserverSilent) {
+			updateserverSilent.onreadystatechange = function() {
+				if ((updateserverSilent.readyState == 4) && (updateserverSilent.status == 200)) {
+					if (updateserverSilent.responseText > version) {
+						if (os.arch() == "x32") {
+							url = "https://d1strict.de/media/218/";
+							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+						} else if (os.arch() == "x64") {
+							url = "https://d1strict.de/media/220/";
+							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+						} else {
+							url = "https://d1strict.de/media/220/";
+							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
+						}
+						downloadUpdate(url, dest);
+						notifier.notify({
+							title: APPName,
+							message: 'Info: Update available. Update is being downloaded.',
+							icon: "./assets/info.png",
+							timeout: 1,
+							appID: VTCName,
+							sound: true,
+							id: 100,
+							wait: true
+						});
+					}
+				}
+				updateserverSilent.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
+				updateserverSilent.send();
+			};
+		}
 	}
 }
 
@@ -210,40 +208,6 @@ async function downloadUpdate(url, dest, cb) {
 }
 
 /* Submit of local-saved Jobs */
-if (localjobsender) {
-	localjobsender.onreadystatechange = function() {
-		if ((localjobsender.readyState == 4) && (localjobsender.status == 200)) {
-			notifier.notify({
-				title: APPName,
-				message: 'Info: local Job submitted.',
-				icon: "./assets/success.png",
-				timeout: 1,
-				appID: VTCName,
-				sound: true,
-				id: 103,
-				wait: false
-			});
-			fs.writeFile(filedeletion, "", (err) => {
-				if (err) throw err;
-				if (devmode == 1) {
-					console.log("API connection successful:\n\n" + localjobsender.responseText + "\n\nLocal job is emptied and flagged for deletion.");
-				}
-			});
-		} else if ((localjobsender.readyState == 4) && (localjobsender.status !== 200)) {
-			notifier.notify({
-				title: APPName,
-				message: 'Error: Local jobs could not be submitted.',
-				icon: "./assets/error.png",
-				timeout: 1,
-				appID: VTCName,
-				sound: true,
-				id: 103,
-				wait: false
-			});
-		}
-	};
-}
-
 var submitJobsRunnning = false;
 async function submitLocalJobs() {
 	if (!submitJobsRunnning) {
@@ -262,11 +226,46 @@ async function submitLocalJobs() {
 						});
 					} else {
 						setTimeout(() => {
-							var content = JSON.parse(jsondata);
+							content = JSON.parse(jsondata);
 							console.log(content);
-							localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&dcnotification=no', true); /* Open the request to the Job-API. */
-							localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
-							localjobsender.send(JSON.stringify(content)); /*Sends the JSON file to the API*/
+							var localjobsender = new XMLHttpRequest();
+							if (localjobsender) {
+								localjobsender.onreadystatechange = function() {
+									if ((localjobsender.readyState == 4) && (localjobsender.status == 200)) {
+										notifier.notify({
+											title: APPName,
+											message: 'Info: local Job submitted.',
+											icon: "./assets/success.png",
+											timeout: 1,
+											appID: VTCName,
+											sound: true,
+											id: 103,
+											wait: false
+										});
+										fs.writeFile(filedeletion, "", (err) => {
+											if (err) throw err;
+											if (devmode == 1) {
+												console.log("API connection successful:\n\n" + localjobsender.responseText + "\n\nLocal job is emptied and flagged for deletion.");
+											}
+										});
+									} else if ((localjobsender.readyState == 4) && (localjobsender.status !== 200)) {
+										notifier.notify({
+											title: APPName,
+											message: 'Error: Local jobs could not be submitted.',
+											icon: "./assets/error.png",
+											timeout: 1,
+											appID: VTCName,
+											sound: true,
+											id: 103,
+											wait: false
+										});
+									}
+								};
+
+								localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&dcnotification=no', true); /* Open the request to the Job-API. */
+								localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
+								localjobsender.send(JSON.stringify(content)); /*Sends the JSON file to the API*/
+							}
 							if (devmode == 1) {
 								console.log('Job found, Connecting...');
 							}
@@ -303,7 +302,7 @@ async function submitLocalJobs() {
 
 /* Restart of the Discord-Rich Presence */
 function restartDRP() {
-	require('child_process').exec('cmd /c ./RebootDRP.bat', function() {
+	require('child_process').exec('cmd /c RebootDRP.bat', function() {
 		if (devmode == 1) {
 			console.log("Restart DRP...");
 		}
@@ -312,7 +311,7 @@ function restartDRP() {
 
 /* Termination of the Discord-Rich Presence */
 function terminateDRP() {
-	require('child_process').exec('cmd /c ./TerminateDRP.bat', function() {
+	require('child_process').exec('cmd /c TerminateDRP.bat', function() {
 		if (devmode == 1) {
 			console.log("Terminate DRP...");
 		}
@@ -359,11 +358,11 @@ rp({
 	updateCheckSilent();
 	submitLocalJobs();
 	restartDRP();
+	apistatus = "false";
 	console.log("Tracker is running.");
 	if (devmode == 1) {
 		console.log("Process-Check successfully. Continue.");
 	}
-	etcars.connect();
 	notifier.notify({
 		title: APPName,
 		message: APPName + ' started.',
@@ -376,34 +375,21 @@ rp({
 	});
 	if (devmode == 1) {
 		setInterval(() => {
-			console.log(APPName  + " still running");
+			console.log(APPName + " still running");
 		}, 30000);
 	}
 });
 
+
 /* Data-Logging & Transmission */
 etcars.on('data', function(data) {
 	if (devmode == 1) {
-		console.log('etcars-data changed.');
+		console.log('data received.');
 	}
 	jobStatus = data.jobData.status; /* 1 = In progress, 2 = Finished, 3 = Cancelled */
 	APISaving(data);
 	MapTransmitting(data);
 });
-
-if (map) {
-	map.onreadystatechange = function() {
-		if ((map.readyState == 4) && (map.status == 200)) {
-			if (devmode == 1) {
-				console.log("Data sent to MAP-API.\n\n" + map.responseText);
-			}
-		} else if ((map.readyState == 4) && (map.status != 200)) {
-			if (devmode == 1) {
-				console.log("Data not sent to MAP-API.\n\n" + map.responseText);
-			}
-		}
-	};
-}
 
 async function MapTransmitting(data) {
 	await onlineCheck();
@@ -424,66 +410,103 @@ async function MapTransmitting(data) {
 	var currentJobSource = data.telemetry.job.sourceCity; /* Current Job-Source */
 	var eta = data.telemetry.navigation.lowestDistance; /* ETA */
 	var currentFuel = data.telemetry.truck.fuel.currentLitres; /* Current fuel in l */
-	map.open('POST', 'https://api.d1strict.net/al/1-1-0/map', true); /* Open the request to the Map API. */
-	map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
-	map.send('game=' + gameName + '&x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey + ''); /* Sends data to the Map API. */
-}
 
-if (request) {
-	request.onreadystatechange = function() {
-		if ((request.readyState == 4) && (request.status == 200)) {
-			notifier.notify({
-				title: APPName,
-				message: 'Info: Job submitted.',
-				icon: "./assets/success.png",
-				timeout: 1,
-				appID: VTCName,
-				sound: true,
-				id: 106,
-				wait: false
-			});
-			if (devmode == 1) {
-				console.log("Connection successful:");
-				console.log(request.responseText);
+	var map = new XMLHttpRequest();
+	if (map) {
+		map.onreadystatechange = function() {
+			if ((map.readyState == 4) && (map.status == 200)) {
+				if (devmode == 1) {
+					console.log("Position sent to MAP-API successful:");
+					console.log(request.responseText);
+				}
 			}
-		} else if ((request.readyState == 4) && (request.status != 200)) {
-			var fileid = Math.random().toString(36).substring(7);
-			fs.writeFileSync('./jobs/' + fileid + '.json', data);
-			apistatus = "false";
-			notifier.notify({
-				title: APPName,
-				message: 'Info: Job locally saved.',
-				icon: "./assets/info.png",
-				timeout: 1,
-				appID: VTCName,
-				sound: true,
-				id: 106,
-				wait: false
-			});
-		}
-	};
+		};
+
+		map.open('POST', 'https://api.d1strict.net/al/1-1-0/map', true); /* Open the request to the Map API. */
+		map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
+		map.send('game=' + gameName + '&x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey + ''); /* Sends data to the Map API. */
+	}
 }
 
+var ApiSavingRunning = false;
 async function APISaving(data) {
 	await onlineCheck();
 	if (!ApiSavingRunning) {
 		if ((jobStatus == "1") && (apistatus == "false")) {
 			if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-				request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
-				request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
-				request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
 				if (devmode == 1) {
-					console.log('Job started, Connecting...\nJobInfo \n\n' + data + '\n\nAuthentication with API key:' + apikey + '');
+					console.log('Job started, Connecting...\nJobInfo \n\n' + JSON.stringify(data) + '\n\nAuthentication with API key:' + apikey + '');
 				}
 				apistatus = "true";
+				var request = new XMLHttpRequest();
+				if (request) {
+					request.onreadystatechange = function() {
+						if ((request.readyState == 4) && (request.status == 200)) {
+							notifier.notify({
+								title: APPName,
+								message: 'Info: Job submitted.',
+								icon: "./assets/success.png",
+								timeout: 1,
+								appID: VTCName,
+								sound: true,
+								id: 106,
+								wait: false
+							});
+							if (devmode == 1) {
+								console.log("Connection successful:");
+								console.log(request.responseText);
+							}
+						}
+					};
+
+					request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
+					request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+					request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
+				}
 			}
 		} else if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
 			if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-				request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
-				request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
-				request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
 				if (devmode == 1) {
-					console.log('Job ended, Connecting...\nJobInfo \n\n' + data + '\n\nAuthentication with API key:' + apikey + '');
+					console.log('Job ended, Connecting...\nJobInfo \n\n' + JSON.stringify(data) + '\n\nAuthentication with API key:' + apikey + '');
+				}
+				var request = new XMLHttpRequest();
+				if (request) {
+					request.onreadystatechange = function() {
+						if ((request.readyState == 4) && (request.status == 200)) {
+							notifier.notify({
+								title: APPName,
+								message: 'Info: Job submitted.',
+								icon: "./assets/success.png",
+								timeout: 1,
+								appID: VTCName,
+								sound: true,
+								id: 106,
+								wait: false
+							});
+							if (devmode == 1) {
+								console.log("Connection successful:");
+								console.log(request.responseText);
+							}
+						} else if ((request.readyState == 4) && (request.status != 200)) {
+							var fileid = Math.random().toString(36).substring(7);
+							fs.writeFileSync('./jobs/' + fileid + '.json', JSON.stringify(data));
+							apistatus = "false";
+							notifier.notify({
+								title: APPName,
+								message: 'Info: Job locally saved.',
+								icon: "./assets/info.png",
+								timeout: 1,
+								appID: VTCName,
+								sound: true,
+								id: 106,
+								wait: false
+							});
+						}
+					};
+
+					request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
+					request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+					request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
 				}
 			} else {
 				var fileid = Math.random().toString(36).substring(7);
@@ -496,11 +519,11 @@ async function APISaving(data) {
 }
 
 etcars.on('connect', function(data) {
-	apistatus = "false";
 	if (devmode == 1) {
 		console.log('connected');
 	}
 });
+
 etcars.on('error', function(data) {
 	if (devmode == 1) {
 		console.log('etcars error');
@@ -599,9 +622,9 @@ const ExitTrackerButton = {
 
 const systray = new SysTray({
 	menu: {
-		icon: './assets/systray.ico',
+		icon: 'systray.ico',
 		title: APPName,
-		tooltip: 'Ace Logistics',
+		tooltip: VTCName,
 		items: [
 			JobMenu,
 			RestartTrackerButton,
