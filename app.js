@@ -27,7 +27,7 @@ const isOnline = require('is-online');
 const isReachable = require('is-reachable');
 
 /* Configuration */
-etcars.enableDebug = true; /* to enable debug console.log and console.error */
+etcars.enableDebug = false; /* to enable debug console.log and console.error */
 var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
 var version = 2; /* Versionnumber (not Semantic) */
 const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
@@ -483,6 +483,7 @@ async function APISaving(data) {
 								id: 106,
 								wait: false
 							});
+							apistatus = "false";
 							if (devmode == 1) {
 								console.log("Connection successful:");
 								console.log(request.responseText);
@@ -639,7 +640,7 @@ const systray = new SysTray({
 function ExitApplication() {
 	notifier.notify({
 		title: APPName,
-		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the' + APPName + ' again.',
+		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the ' + APPName + ' again.',
 		icon: "./assets/warning.png",
 		timeout: 1,
 		appID: VTCName,
@@ -679,7 +680,7 @@ systray.onClick(action => {
 exitHook(() => {
 	notifier.notify({
 		title: APPName,
-		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the' + APPName + ' again.',
+		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the ' + APPName + ' again.',
 		icon: "./assets/warning.png",
 		timeout: 1,
 		appID: VTCName,
