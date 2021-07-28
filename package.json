@@ -1,17 +1,16 @@
 {
   "dependencies": {
-    "crypto": "^1.0.1",
-    "etcars-node-client": "^1.0.4",
-    "exit-hook": "^2.2.1",
-    "https": "^1.0.0",
+    "discord-rich-presence": "^0.0.8",
+    "discord-webhook-node": "^1.1.8",
+    "fs": "^0.0.1-security",
+    "http": "^0.0.1-security",
     "is-online": "^9.0.1",
-    "is-reachable": "^5.0.0",
     "node-notifier": "^10.0.0",
     "open": "^8.2.1",
-    "os": "^0.1.1",
-    "request": "^2.88.2",
+    "os": "^0.1.2",
     "request-promise": "^4.2.6",
     "systray2": "^2.1.2",
+    "trucksim-telemetry": "^0.15.0",
     "xmlhttprequest": "^1.8.0"
   }
 }

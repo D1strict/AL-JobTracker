@@ -1,536 +1,639 @@
-/* 	Ace Logistics - JobTracker 1.1.0
+/* 
+    ===================================================================================================================
+        JobTracker 2.0.0 - Fenix
 
-    @Authors: AdyStudios, Felix Waßmuth (D1strict-Development)
-    @License: GNU General Public License v3.0 - https://github.com/D1strict/AL-JobTracker/blob/main/LICENSE
-    @Website: https://ace-logistics.uk/
-    (c) 2021, Ace Logistics
-
+        @Authors: AdyStudios, Felix Waßmuth (D1strict-Development)
+        @License: MIT License - https://github.com/D1strict/AL-JobTracker/blob/2.0.0/LICENSE
+        @Website: https://development.d1strict.de/
+        (c) 2021, D1strict-Development
+    ===================================================================================================================
 */
 
-/* Dependencies */
-var ETCarsClient = require('etcars-node-client');
-const notifier = require('node-notifier');
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-const fs = require('fs');
-var etcars = new ETCarsClient();
-etcars.connect();
-var request = new XMLHttpRequest();
-const http = require('http');
-const https = require('https');
-const rp = require('request-promise');
-var open = require('open');
-const SysTray = require('systray2').default;
-const os = require('os');
-var exec = require('child_process').execFile;
-const exitHook = require('exit-hook');
+/* ===== Dependencies ===== */
+const tst = require('trucksim-telemetry');
+const notification = require('node-notifier');
 const isOnline = require('is-online');
-const isReachable = require('is-reachable');
+const XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+const fs = require('fs');
+const home = require('os').homedir();
+const http = require('http');
+const reqpro = require('request-promise');
+const path = require('path');
+const SysTray = require('systray2').default;
+const client = require('discord-rich-presence')('833293244741582868');
+const {
+	Webhook,
+	MessageBuilder
+} = require('discord-webhook-node');
 
-/* Configuration */
-etcars.enableDebug = true; /* to enable debug console.log and console.error */
-var devmode = 0; /* Developer mode: 1 - Active - Advanced outputs in the console, 0 = Production mode (no outputs in the console). */
-var version = 2; /* Versionnumber (not Semantic) */
-const AlTPort = 10853; /* Port for the process check (should be a port which is not commonly) */
-const AlTPath = '/AlT'; /* Random path. Should not contain special characters or umlauts. */
-var apikey = ""; /* INSERT API-KEY */
+/* ===== Settings ===== */
+const appName = 'JobTracker';
+const vtcName = 'Ace Logistics';
+const appVersion = "2.0.0";
+const vtcURL = 'https://ace-logistics.uk/';
+const legalNotice = 'https://d1strict.de/legal-notice/';
+const privacyPolicy = 'https://d1strict.de/privacy-policy/';
+const supportURL = 'https://d1s.eu/alvtc/';
+const jobSubmitURL = 'https://d1strict.de/form-user-response/10-submit-a-job/';
+const apiURL = 'https://api.d1strict.net/ace-logistics/2-0-0/';
+const apiKey = '';
+const silentNotification = false;
+const runtimePort = '07202';
+const runtimePath = '/JobTracker';
+const discordWebhook = new Webhook('https://discord.com/api/webhooks/858107565350060039/xRIgy0djDA5XGrlqYrawHRity1ShiFbb34iQyXPhYz9KuAtGQHTYDcKyOT0KvIYPB6ve');
+const discordNotifier = true;
+const discordAvatar = 'https://d1strict.de/media/202/';
+const discordLink = 'https://ace-logistics.uk/';
+const discordColor = '#102555';
+const discordRichPresence = true;
+const discordRichPresenceLargeImageKey = 'acelogistics';
 
-const VTCName = "Ace Logistics";
-const APPName = "JobTracker";
+/* ===== Language variables ===== */
+langError = 'Error';
+		langSuccess = 'Success';
+		langWarning = 'Warning';
+		langInfo = 'Info';
+		langAppAlreadyRunning = 'The ' + appName + ' cannot be started, it is already running.';
+		langAppJobOfflineSubmitSuccess = 'A local job was submitted.';
+		langAppJobOfflineSubmitFailed = 'A local job could not be submitted.\nWe will try again the next time if you start ' + appName + '.';
+		langAppConnected = 'The ' + appName + ' has been initialized.';
+		langJobStartedOnline = 'Job started.\nHave a nice trip!';
+		langJobStartedOffline = 'Job started.\nThis job is saved locally.\nHave a good trip!';
+		langJobStartedOnline = 'Job cancelled.';
+		langJobStartedOffline = 'Job cancelled.\nThis job is deleted locally.';
+		langDiscordMessageJobStartedTitle = 'Job started';
+		langDiscordRichPresenceBreakStatus = "I'm taking a break right now.";
+		langDiscordRichPresenceBreak = "☕ Paused";
+		langDiscordRichPresenceFreeroam = "🚛 Freeroam";
+		langDiscordRichPresenceJob = "🚚 Job";
+		
 
-/* Removal of existing notifications */
-var notifyIDS = ["100", "101", "102", "103", "104", "105", "106", "107"];
-notifyIDS.forEach(notifyRemove);
+/* ===== Start-UP ===== */
+const telemetry = tst();
 
-function notifyRemove(item) {
-	notifier.notify({
-		'remove': item // to remove all group ID
-	});
-}
-
-/* Functions */
-
-async function onlineCheck() {
-	isOnlineCheck = await isOnline();
-	isReachableCheck = await isReachable('api.d1strict.net/al/1-1-0/appversion.txt');
-	return;
-}
-
-/* Checking for - and installing updates */
-async function updateCheck() {
-	await onlineCheck();
-	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		var updateserver = new XMLHttpRequest();
-		if (updateserver) {
-			updateserver.onreadystatechange = function() {
-				if ((updateserver.readyState == 4) && (updateserver.status == 200)) {
-					if (updateserver.responseText > version) {
-						if (os.arch() == "x32") {
-							url = "https://d1strict.de/media/218/";
-							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-						} else if (os.arch() == "x64") {
-							url = "https://d1strict.de/media/220/";
-							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-						} else {
-							url = "https://d1strict.de/media/220/";
-							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-						}
-						downloadUpdate(url, dest);
-						notifier.notify({
-							title: APPName,
-							message: 'Info: Update available. Update is being downloaded.',
-							icon: "./assets/info.png",
-							timeout: 1,
-							appID: VTCName,
-							sound: true,
-							id: 100,
-							wait: true
-						});
-					} else {
-						notifier.notify({
-							title: APPName,
-							message: 'Info: The JobTracker is up to date.',
-							icon: "./assets/info.png",
-							timeout: 1,
-							appID: VTCName,
-							sound: true,
-							id: 100,
-							wait: true
-						});
-						console.log(updateserver.responseText);
-					}
-				}
-			};
-			updateserver.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
-			updateserver.send();
-		}
-	} else {
-		notifier.notify({
-			title: APPName,
-			message: 'Error: It was not possible to check for updates because no connection could be established.\nPlease check your internet connection.',
-			icon: "./assets/error.png",
-			timeout: 1,
-			appID: VTCName,
-			sound: true,
-			id: 100,
-			wait: false
-		});
-	}
-}
-
-async function updateCheckSilent() {
-	await onlineCheck();
-	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		var updateserverSilent = new XMLHttpRequest();
-		if (updateserverSilent) {
-			updateserverSilent.onreadystatechange = function() {
-				if ((updateserverSilent.readyState == 4) && (updateserverSilent.status == 200)) {
-					if (updateserverSilent.responseText > version) {
-						if (os.arch() == "x32") {
-							url = "https://d1strict.de/media/218/";
-							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-						} else if (os.arch() == "x64") {
-							url = "https://d1strict.de/media/220/";
-							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-						} else {
-							url = "https://d1strict.de/media/220/";
-							dest = os.tmpdir() + '\\Updated_ALJobTracker.exe';
-						}
-						downloadUpdate(url, dest);
-						notifier.notify({
-							title: APPName,
-							message: 'Info: Update available. Update is being downloaded.',
-							icon: "./assets/info.png",
-							timeout: 1,
-							appID: VTCName,
-							sound: true,
-							id: 100,
-							wait: true
-						});
-					}
-				}
-				updateserverSilent.open("GET", "https://api.d1strict.net/al/1-1-0/appversion.txt");
-				updateserverSilent.send();
-			};
-		}
-	}
-}
-
-async function downloadUpdate(url, dest, cb) {
-	await onlineCheck();
-	if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-		var file = fs.createWriteStream(dest);
-		var request = https.get(url, function(response) {
-			response.pipe(file);
-			file.on('finish', function() {
-				file.close(cb); // close() is async, call cb after close completes.
-				notifier.notify({
-					title: APPName,
-					message: 'Success: The update has been downloaded successfully.\nThe installation routine will be started in a few moments.',
-					icon: "./assets/success.png",
-					timeout: 1,
-					appID: VTCName,
-					sound: true,
-					id: 101,
-					wait: false
-				});
-				exec(os.tmpdir() + '\\Updated_ALJobTracker.exe', function(err, data) {
-					if (devmode == 1) {
-						if (err) {
-							console.log(err);
-							return;
-						}
-						console.log(data.toString());
-					}
-				});
-				setTimeout(() => {
-					terminateDRP();
-					notifyIDS.forEach(notifyRemove);
-					systray.kill();
-					process.exit(1);
-				}, 5000);
-			});
-		}).on('error', function(err) { // Handle errors
-			fs.unlink(dest); // Delete the file async. (But we don't check the result)
-			if (cb && devmode == 1) cb(err.message);
-			notifier.notify({
-				title: APPName,
-				message: 'Error: An error has occurred. The update could not be downloaded. Try again later.',
-				icon: "./assets/error.png",
-				timeout: 1,
-				appID: VTCName,
-				sound: true,
-				id: 102,
-				wait: true
-			});
-		});
-
-	}
-}
-
-/* Submit of local-saved Jobs */
-var submitJobsRunnning = false;
-async function submitLocalJobs() {
-	if (!submitJobsRunnning) {
-		await onlineCheck();
-		if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-			fs.readdir("./jobs/", (err, files) => {
-				if (err) throw err;
-				files.forEach(file => {
-					var jsondata = fs.readFileSync("./jobs/" + file + "", 'utf8');
-					if (files.length == 0) {
-						fs.unlink('./jobs/' + file + '', (err) => {
-							if (err && devmode == 1) {
-								console.log(err);
-								return;
-							}
-						});
-					} else {
-						setTimeout(() => {
-							content = JSON.parse(jsondata);
-							console.log(content);
-							var localjobsender = new XMLHttpRequest();
-							if (localjobsender) {
-								localjobsender.onreadystatechange = function() {
-									if ((localjobsender.readyState == 4) && (localjobsender.status == 200)) {
-										notifier.notify({
-											title: APPName,
-											message: 'Info: local Job submitted.',
-											icon: "./assets/success.png",
-											timeout: 1,
-											appID: VTCName,
-											sound: true,
-											id: 103,
-											wait: false
-										});
-										fs.writeFile(filedeletion, "", (err) => {
-											if (err) throw err;
-											if (devmode == 1) {
-												console.log("API connection successful:\n\n" + localjobsender.responseText + "\n\nLocal job is emptied and flagged for deletion.");
-											}
-										});
-									} else if ((localjobsender.readyState == 4) && (localjobsender.status !== 200)) {
-										notifier.notify({
-											title: APPName,
-											message: 'Error: Local jobs could not be submitted.',
-											icon: "./assets/error.png",
-											timeout: 1,
-											appID: VTCName,
-											sound: true,
-											id: 103,
-											wait: false
-										});
-									}
-								};
-
-								localjobsender.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&dcnotification=no', true); /* Open the request to the Job-API. */
-								localjobsender.setRequestHeader('Content-Type', 'application/json'); /* Sets the request header for the Job-API */
-								localjobsender.send(JSON.stringify(content)); /*Sends the JSON file to the API*/
-							}
-							if (devmode == 1) {
-								console.log('Job found, Connecting...');
-							}
-							filedeletion = './jobs/' + file + '';
-						}, 65000);
-					}
-				});
-			});
-		} else {
-			notifier.notify({
-				title: APPName,
-				message: 'Error: Local jobs could not be submitted.\nCheck your internet connection.',
-				icon: "./assets/error.png",
-				timeout: 1,
-				appID: VTCName,
-				sound: true,
-				id: 103,
-				wait: false
-			});
-		}
-	} else {
-		notifier.notify({
-			title: APPName,
-			message: 'Warning: Local jobs are already submitted.\nBe patient for a moment.',
-			icon: "./assets/warning.png",
-			timeout: 1,
-			appID: VTCName,
-			sound: true,
-			id: 103,
-			wait: false
-		});
-	}
-}
-
-/* Restart of the Discord-Rich Presence */
-function restartDRP() {
-	require('child_process').exec('cmd /c RebootDRP.bat', function() {
-		if (devmode == 1) {
-			console.log("Restart DRP...");
-		}
-	});
-}
-
-/* Termination of the Discord-Rich Presence */
-function terminateDRP() {
-	require('child_process').exec('cmd /c TerminateDRP.bat', function() {
-		if (devmode == 1) {
-			console.log("Terminate DRP...");
-		}
-	});
-}
-
-/* Process-Checking */
-rp({
-	uri: `http://localhost:${AlTPort}${AlTPath}`,
+reqpro({
+	uri: `http://localhost:${runtimePort}${runtimePath}`,
 	resolveWithFullResponse: true
 }).then(res => {
 	if (res.statusCode === 200) {
-		notifier.notify({
-			title: APPName,
-			message: 'Error: Tracker could not be started, it is already running.',
-			icon: "./assets/error.png",
-			timeout: 1,
-			appID: VTCName,
-			sound: true,
-			id: 105,
-			wait: false
+		notification.notify({
+			title: appName,
+			message: '' + langError + ':' + langAppAlreadyRunning + '',
+			icon: './assets/error.png',
+			appID: vtcName,
+			sound: silentNotification
 		});
-		setTimeout(() => {
-			systray.kill();
-			process.exit(1);
-		}, 2000);
+		process.exit(1);
 	} else {
+
 		throw new Error(`statusCode ${res.statusCode}`);
 	}
-}).catch(err => {
+}).catch(_err => {
 	const server = http.createServer((req, res) => {
-		if (req.url === AlTPath) {
+		if (req.url === runtimePath) {
 			res.statusCode = 200;
-			res.end("ok");
+			res.end('ok');
 		} else {
 			res.statusCode = 404;
-			res.end("err");
+			res.end('err');
 		}
 	});
-	server.listen(AlTPort);
+	server.listen(runtimePort);
 	server.unref();
-	// StartUp
-	onlineCheck();
-	updateCheckSilent();
-	submitLocalJobs();
-	restartDRP();
-	apistatus = "false";
-	console.log("Tracker is running.");
-	if (devmode == 1) {
-		console.log("Process-Check successfully. Continue.");
+	try {
+		var steamFile = home + '/Documents/' + vtcName + '/config.json';
+		let file = JSON.parse(fs.readFileSync(steamFile, 'utf8'));
+		steamID = file.steamID;
+		steamUsername = file.steamUsername;
+
+		/* ===== User-specific language variables ===== */
+		langDiscordMessageJobStarted = '' + steamUsername + ' has started a job.';
+		langDiscordMessageJobCancelledTitle = 'Job cancelled';
+		langDiscordMessageJobCancelled = '' + steamUsername + ' has cancelled a job.';
+		langDiscordMessageTookFerry = '' + steamUsername + ' took a ferry.';
+		langDiscordMessageFined = '' + steamUsername + ' has received a fine';
+		langDiscordMessageToll = '' + steamUsername + ' has passed a toll station.';
+		langDiscordMessageTookTrain = '' + steamUsername + ' took a train.';
+		langDiscordMessageCollision = '' + steamUsername + ' has damaged the vehicle.';
+		langDiscordMessageCameOnline = '' + steamUsername + ' is now online.';
+	} catch (err) {
+		console.error(err);
 	}
-	notifier.notify({
-		title: APPName,
-		message: APPName + ' started.',
-		icon: "./assets/logo.png",
-		timeout: 1,
-		appID: VTCName,
-		sound: true,
-		id: 105,
-		wait: false
-	});
-	if (devmode == 1) {
-		setInterval(() => {
-			console.log(APPName + " still running");
-		}, 30000);
-	}
+	discordWebhook.setUsername(vtcName);
+	discordWebhook.setAvatar(discordAvatar);
+	telemetry.watch();
+	jobStatus = false;
 });
 
-
-/* Data-Logging & Transmission */
-etcars.on('data', function(data) {
-	if (devmode == 1) {
-		console.log('data received.');
+async function DRP(data) {
+	var steamFile = home + '/Documents/' + vtcName + '/config.json';
+	var file = JSON.parse(fs.readFileSync(steamFile, 'utf8'));
+	var speedUnit = file.speedUnit;
+	if (data.game.game.name == "ets2") {
+		var game = "ETS2";
+	} else {
+		var game = "ATS"
 	}
-	jobStatus = data.jobData.status; /* 1 = In progress, 2 = Finished, 3 = Cancelled */
-	APISaving(data);
-	MapTransmitting(data);
+	if (speedUnit == "kph") {
+		var dctext = data.truck.brand.name + ' ' + data.truck.model.name+ ' | ' + JSON.stringify(data.truck.speed.kph) + 'kph';
+	} else if (speedUnit == "mph") {
+		var dctext = data.truck.brand.name + ' ' + data.truck.model.name+ ' | ' + JSON.stringify(data.truck.speed.mph) + 'mph';
+	}
+	if (typeof conTime === 'undefined') {
+		conTime = Date.now();
+	}
+	if (((jobStatus === true) || (data.job.cargo.mass > "0")) && (data.game.paused != true)) {
+		client.updatePresence({
+			state: dctext,
+			details: langDiscordRichPresenceJob + ': '+ data.job.source.city.name +' - '+ data.job.destination.city.name + ' (≈' + Math.round(data.job.cargo.mass / 1000) + 't)',
+			largeImageKey: discordRichPresenceLargeImageKey,
+			startTimestamp: conTime,
+			instance: true,
+			buttons: [
+                { label: "Join "+ vtcName, url: vtcURL }
+            ]
+		  });
+	} else if (data.game.paused === true) {
+		client.updatePresence({
+			state: langDiscordRichPresenceBreakStatus,
+			details: langDiscordRichPresenceBreak+': '+ game +'',
+			largeImageKey: discordRichPresenceLargeImageKey,
+			largeImageText: appName + ' '+ appVersion,
+			startTimestamp: conTime,
+			instance: true,
+			buttons: [
+                { label: "🌈🐈🌟", url: "https://www.youtube.com/watch?v=GE8M5QM1sf8" }, /* Easteregg */
+                { label: "Join "+ vtcName, url: vtcURL }
+            ]
+		  });
+	} else {
+	client.updatePresence({
+		state: dctext,
+		details: langDiscordRichPresenceFreeroam + ': '+ game +'',
+		largeImageKey: discordRichPresenceLargeImageKey,
+		startTimestamp: conTime,
+		instance: true,
+		buttons: [
+			{ label: "Join "+ vtcName, url: vtcURL }
+		]
+	  });
+	}
+  }
+  if (discordRichPresence) {
+  telemetry.watch({interval: 5000}, DRP)
+  }
+
+  client.on('error', err => {
+    console.log(`Error: ${err}`);
 });
 
-async function MapTransmitting(data) {
-	await onlineCheck();
-	var isPaused = data.telemetry.game.paused; /* Return: Boolean */
-	var isDriving = data.telemetry.game.isDriving; /* Return:: Boolean */
-	var gameID = data.telemetry.game.gameID; /* Return: ets2 or ats */
-	var gameName = data.telemetry.game.gameName; /* Return: Euro Truck Simulator 2 or American Truck Simulator */
-	var truckMake = data.telemetry.truck.make; /* Return: String */
-	var truckModel = data.telemetry.truck.model; /* Return: String */
-	var truckPositionX = data.telemetry.truck.worldPlacement.x; /* X-Coordinate of the Truck */
-	var truckPositionY = data.telemetry.truck.worldPlacement.y; /* Y-Coordinate of the Truck */
-	var truckPositionZ = data.telemetry.truck.worldPlacement.z; /* Z-Coordinate of the Truck */
-	var jobRemainingTime = data.jobData.timeRemaining; /* Remaining time, until the delivery will be late */
-	var steamID = data.telemetry.user.steamID; /* Steam-UserID */
-	var steamUsername = data.telemetry.user.steamUsername; /* Steam-Username */
-	var currentSpeed = data.telemetry.truck.speed; /* Current Speed */
-	var currentJobDestination = data.telemetry.job.destinationCity; /* Current Job-Destination*/
-	var currentJobSource = data.telemetry.job.sourceCity; /* Current Job-Source */
-	var eta = data.telemetry.navigation.lowestDistance; /* ETA */
-	var currentFuel = data.telemetry.truck.fuel.currentLitres; /* Current fuel in l */
-
-	var map = new XMLHttpRequest();
-	if (map) {
-		map.onreadystatechange = function() {
-			if ((map.readyState == 4) && (map.status == 200)) {
-				if (devmode == 1) {
-					console.log("Position sent to MAP-API successful:");
-					console.log(request.responseText);
+async function submitLocalJobs() {
+		fs.readdir(home + '/Documents/' + vtcName + '/jobs/', (err, files) => {
+			var deliveredJobs = files.filter(el => path.extname(el) === '.delivered');
+			var startedJobs = files.filter(el => path.extname(el) === '.started');
+			var cancelledJobs = files.filter(el => path.extname(el) === '.cancelled');
+			startedJobs.forEach(file => {
+				var jobFile = file;
+				var jobID = jobFile.replace(".started", "");
+				console.log(jobID);
+				var request = new XMLHttpRequest();
+				if (request) {
+					request.onreadystatechange = function() {
+						if ((request.readyState === 4) && (request.status === 200)) {
+							fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + jobFile);
+							console.log('Connection successful:\n HTTP-Status:' + request.status);
+						} else if ((request.readyState === 4) && (request.status === 404)) {
+							request.onreadystatechange = function() {
+								if ((request.readyState === 4) && (request.status === 200)) {
+									notification.notify({
+										title: appName,
+										message: '' + langSuccess + ':' + langAppJobOfflineSubmitSuccess + '',
+										icon: './assets/success.png',
+										appID: vtcName,
+										sound: silentNotification,
+										wait: true
+									});
+									fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + jobFile);
+									if (devmode == 1) {
+										console.log('Connection successful:\n HTTP-Status:' + request.status);
+									}
+								} else if ((request.readyState === 4) && (request.status !== 200)) {
+									notification.notify({
+										title: appName,
+										message: '' + langError + ':' + langAppJobOfflineSubmitFailed + '',
+										icon: './assets/error.png',
+										appID: vtcName,
+										sound: silentNotification,
+										wait: true
+									});
+								}
+							};
+							request.open('POST', '' + apiURL + 'add?apikey=' + apiKey + '&steamID' + steamID + '&jobID=000000', true); /* Open the request to the Job-API. */
+							request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+							request.send(JSON.stringify(JSON.parse(fs.readFileSync(jobFile, 'utf8')))); /* Sends the JSON file to the API */
+						} else if ((request.readyState === 4) && ((request.status !== 404) || (request.status !== 200))) {
+							notification.notify({
+								title: appName,
+								message: '' + langError + ':' + langAppJobOfflineSubmitFailed + '',
+								icon: './assets/error.png',
+								appID: vtcName,
+								sound: silentNotification,
+								wait: true
+							});
+						}
+					};
+					request.open('GET', '' + apiURL + 'job/get?apikey=' + apiKey + '&jobID=' + jobID + '', true); /* Open the request to the Job-API. */
+					request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+					request.send(); /* Sends the JSON file to the API */
 				}
+			});
+			deliveredJobs.forEach(file => {
+				var jobFile = file;
+				var jobID = jobFile.replace(".delivered", "");
+				console.log(jobID);
+				var request = new XMLHttpRequest();
+				if (request) {
+					request.onreadystatechange = function() {
+						if ((request.readyState === 4) && (request.status === 200)) {
+							fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + jobFile);
+							console.log('Connection successful:\n HTTP-Status:' + request.status);
+						} else if ((request.readyState === 4) && (request.status === 404)) {
+							request.onreadystatechange = function() {
+								if ((request.readyState === 4) && (request.status === 200)) {
+									notification.notify({
+										title: appName,
+										message: '' + langSuccess + ':' + langAppJobOfflineSubmitSuccess + '',
+										icon: './assets/success.png',
+										appID: vtcName,
+										sound: silentNotification,
+										wait: true
+									});
+									fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + jobFile);
+									if (devmode == 1) {
+										console.log('Connection successful:\n HTTP-Status:' + request.status);
+									}
+								} else if ((request.readyState === 4) && (request.status !== 200)) {
+									notification.notify({
+										title: appName,
+										message: '' + langError + ':' + langAppJobOfflineSubmitFailed + '',
+										icon: './assets/error.png',
+										appID: vtcName,
+										sound: silentNotification,
+										wait: true
+									});
+								}
+							};
+							request.open('POST', '' + apiURL + 'job/add?apikey=' + apiKey + '&steamID' + steamID + '&jobID=000000', true); /* Open the request to the Job-API. */
+							request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+							request.send(JSON.stringify(JSON.parse(fs.readFileSync(jobFile, 'utf8')))); /* Sends the JSON file to the API */
+						} else if ((request.readyState === 4) && ((request.status !== 404) || (request.status !== 200))) {
+							notification.notify({
+								title: appName,
+								message: '' + langError + ':' + langAppJobOfflineSubmitFailed + '',
+								icon: './assets/error.png',
+								appID: vtcName,
+								sound: silentNotification,
+								wait: true
+							});
+						}
+					};
+					request.open('GET', '' + apiURL + 'job/get?apikey=' + apiKey + '&jobID=' + jobID + '', true); /* Open the request to the Job-API. */
+					request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+					request.send(); /* Sends the JSON file to the API */
+				}
+			});
+			cancelledJobs.forEach(file => {
+				var jobFile = file;
+				var jobID = jobFile.replace(".cancelled", "");
+				console.log(jobID);
+				var request = new XMLHttpRequest();
+				if (request) {
+					request.onreadystatechange = function() {
+						if ((request.readyState === 4) && (request.status === 200)) {
+							fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + jobFile);
+							console.log('Connection successful:\n HTTP-Status:' + request.status);
+						} else if ((request.readyState === 4) && (request.status === 404)) {
+							request.onreadystatechange = function() {
+								if ((request.readyState === 4) && (request.status === 200)) {
+									notification.notify({
+										title: appName,
+										message: '' + langSuccess + ':' + langAppJobOfflineSubmitSuccess + '',
+										icon: './assets/success.png',
+										appID: vtcName,
+										sound: silentNotification,
+										wait: true
+									});
+									fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + jobFile);
+									if (devmode == 1) {
+										console.log('Connection successful:\n HTTP-Status:' + request.status);
+									}
+								} else if ((request.readyState === 4) && (request.status !== 200)) {
+									notification.notify({
+										title: appName,
+										message: '' + langError + ':' + langAppJobOfflineSubmitFailed + '',
+										icon: './assets/error.png',
+										appID: vtcName,
+										sound: silentNotification,
+										wait: true
+									});
+								}
+							};
+							request.open('POST', '' + apiURL + 'add?apikey=' + apiKey + '&steamID' + steamID + '&jobID=000000', true); /* Open the request to the Job-API. */
+							request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+							request.send(JSON.stringify(JSON.parse(fs.readFileSync(jobFile, 'utf8')))); /* Sends the JSON file to the API */
+						} else if ((request.readyState === 4) && ((request.status !== 404) || (request.status !== 200))) {
+							notification.notify({
+								title: appName,
+								message: '' + langError + ':' + langAppJobOfflineSubmitFailed + '',
+								icon: './assets/error.png',
+								appID: vtcName,
+								sound: silentNotification,
+								wait: true
+							});
+						}
+					};
+					request.open('GET', '' + apiURL + 'job/get?apikey=' + apiKey + '&jobID=' + jobID + '', true); /* Open the request to the Job-API. */
+					request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+					request.send(); /* Sends the JSON file to the API */
+				}
+			});
+		});
+}
+
+/* ===== Event-Listener ===== */
+telemetry.game.on('connected', function() {
+	notification.notify({
+		title: appName,
+		message: '' + langSuccess + ':' + langAppConnected + '',
+		icon: './assets/success.png',
+		appID: vtcName,
+		sound: silentNotification
+	});
+	conTime = Date.now();
+	/*if (discordNotifier) {
+		discordWebhook.send(langDiscordMessageCameOnline);
+	}*/
+});
+
+telemetry.job.on('started', async function(jobData) {
+	jobStatus = true;
+	var request = new XMLHttpRequest();
+	await generateJobID();
+	if ((await isOnline()) && (request)) {
+		request.onreadystatechange = function() {
+			if ((request.readyState === 4) && (request.status === 200)) {
+				notification.notify({
+					title: appName,
+					message: '' + langInfo + ':' + langJobStartedOnline + '',
+					icon: './assets/info.png',
+					appID: vtcName,
+					sound: silentNotification
+				});
+				if (devmode == 1) {
+					console.log('Connection successful:\n HTTP-Status:' + request.status);
+				}
+			} else if ((request.readyState == 4) && (request.status !== 200)) {
+				notification.notify({
+					title: appName,
+					message: '' + langInfo + ':' + langJobStartedOffline + '',
+					icon: './assets/info.png',
+					appID: vtcName,
+					sound: silentNotification
+				});
 			}
 		};
-
-		map.open('POST', 'https://api.d1strict.net/al/1-1-0/map', true); /* Open the request to the Map API. */
-		map.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded'); /* Sets the request header for the Map API */
-		map.send('game=' + gameName + '&x=' + truckPositionX + '&y=' + truckPositionY + '&z=' + truckPositionZ + '&isDriving=' + isDriving + '&isPaused=' + isPaused + '&jobRemainingTime=' + jobRemainingTime + '&steamID=' + steamID + '&steamUsername=' + steamUsername + '&currentSpeed=' + currentSpeed + '&currentDestination=' + currentJobDestination + '&eta=' + eta + '&currentFuel=' + currentFuel + '&currentSource=' + currentJobSource + '&gameID=' + gameID + '&truckMake=' + truckMake + '&truckModel=' + truckModel + '&apikey=' + apikey + ''); /* Sends data to the Map API. */
-	}
-}
-
-var ApiSavingRunning = false;
-async function APISaving(data) {
-	await onlineCheck();
-	if (!ApiSavingRunning) {
-		if ((jobStatus == "1") && (apistatus == "false")) {
-			if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-				if (devmode == 1) {
-					console.log('Job started, Connecting...\nJobInfo \n\n' + JSON.stringify(data) + '\n\nAuthentication with API key:' + apikey + '');
-				}
-				apistatus = "true";
-				var request = new XMLHttpRequest();
-				if (request) {
-					request.onreadystatechange = function() {
-						if ((request.readyState == 4) && (request.status == 200)) {
-							notifier.notify({
-								title: APPName,
-								message: 'Info: Job submitted.',
-								icon: "./assets/success.png",
-								timeout: 1,
-								appID: VTCName,
-								sound: true,
-								id: 106,
-								wait: false
-							});
-							if (devmode == 1) {
-								console.log("Connection successful:");
-								console.log(request.responseText);
-							}
-						}
-					};
-
-					request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
-					request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
-					request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
-				}
-			}
-		} else if (((jobStatus == "2") && (apistatus == "true")) || ((jobStatus == "3") && (apistatus == "true"))) /* Check if the job has not been sent yet and if it has been finished */ {
-			if ((isOnlineCheck == true) && (isReachableCheck == true)) {
-				if (devmode == 1) {
-					console.log('Job ended, Connecting...\nJobInfo \n\n' + JSON.stringify(data) + '\n\nAuthentication with API key:' + apikey + '');
-				}
-				var request = new XMLHttpRequest();
-				if (request) {
-					request.onreadystatechange = function() {
-						if ((request.readyState == 4) && (request.status == 200)) {
-							notifier.notify({
-								title: APPName,
-								message: 'Info: Job submitted.',
-								icon: "./assets/success.png",
-								timeout: 1,
-								appID: VTCName,
-								sound: true,
-								id: 106,
-								wait: false
-							});
-							if (devmode == 1) {
-								console.log("Connection successful:");
-								console.log(request.responseText);
-							}
-						} else if ((request.readyState == 4) && (request.status != 200)) {
-							var fileid = Math.random().toString(36).substring(7);
-							fs.writeFileSync('./jobs/' + fileid + '.json', JSON.stringify(data));
-							apistatus = "false";
-							notifier.notify({
-								title: APPName,
-								message: 'Info: Job locally saved.',
-								icon: "./assets/info.png",
-								timeout: 1,
-								appID: VTCName,
-								sound: true,
-								id: 106,
-								wait: false
-							});
-						}
-					};
-
-					request.open('POST', 'https://api.d1strict.net/al/1-1-0/add?apikey=' + apikey + '&jobstatus=' + jobStatus + '', true); /* Open the request to the Job-API. */
-					request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
-					request.send(JSON.stringify(data)); /* Sends the JSON file to the API */
-				}
-			} else {
-				var fileid = Math.random().toString(36).substring(7);
-				fs.writeFileSync('./jobs/' + fileid + '.json', JSON.stringify(data));
-				retryCount = 0;
-				apistatus = "false";
-			}
+		request.open('POST', '' + apiURL + 'job/start?apikey=' + apiKey + '&steamID' + steamID + '&jobID=' + globalJobID + '', true); /* Open the request to the Job-API. */
+		request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+		request.send(JSON.stringify(jobData)); /* Sends the JSON file to the API */
+		if (discordNotifier) {
+			const embed = new MessageBuilder()
+				.setTitle(langDiscordMessageJobStartedTitle)
+				.setAuthor(vtcName + ' - ' + appName, discordAvatar, discordLink)
+				.setURL(discordLink)
+				.addField(':detective: Steam-User', steamUsername)
+				.addField(':triangular_flag_on_post: From', jobData.source.city + ' (' + jobData.source.company + ')')
+				.addField(':checkered_flag: To', jobData.destination.city + ' (' + jobData.destination.company + ')')
+				.addField(':beverage_box: Cargo', jobData.cargo.name)
+				.addField(':man_lifting_weights: Mass', jobData.cargo.mass)
+				.addField(':motorway: Expected Distance', jobData.plannedDistance.km + 'km (' + jobData.plannedDistance.miles + 'miles)')
+				.addField(':construction_site: Special-Job', jobData.isSpecial)
+				.setColor(discordColor)
+				.setThumbnail(discordAvatar)
+				.setDescription(langDiscordMessageJobStarted)
+				.setFooter(appName, 'https://github.com/D1strict/AL-JobTracker/')
+				.setTimestamp();
+			discordWebhook.send(embed);
 		}
+	} else {
+		if (typeof globalJobID === 'undefined') {
+			await generateJobID();
+		}
+		notification.notify({
+			title: appName,
+			message: '' + langInfo + ':' + langJobStartedOffline + '',
+			icon: './assets/info.png',
+			appID: vtcName,
+			sound: silentNotification
+		});
+	}
+	fs.writeFileSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtstarted', JSON.stringify(jobData));
+});
+
+telemetry.job.on('delivered', async function(jobData) {
+	jobStatus = false;
+	var request = new XMLHttpRequest();
+	if (typeof globalJobID === 'undefined') {
+		await generateJobID();
+	}
+	if ((await isOnline()) && (request)) {
+		request.onreadystatechange = function() {
+			if ((request.readyState === 4) && (request.status === 200)) {
+				notification.notify({
+					title: appName,
+					message: '' + langInfo + ':' + langJobCancelledOnline + '',
+					icon: './assets/info.png',
+					appID: vtcName,
+					sound: silentNotification
+				});
+				console.log('Connection successful:\n HTTP-Status:' + request.status);
+			} else if ((request.readyState === 4) && (request.status !== 200)) {
+				notification.notify({
+					title: appName,
+					message: '' + langInfo + ':' + langJobCancelledOffline + '',
+					icon: './assets/info.png',
+					appID: vtcName,
+					sound: silentNotification
+				});
+			}
+		};
+		request.open('POST', '' + apiURL + 'job/deliver?apikey=' + apiKey + '&steamID' + steamID + '&jobID=' + globalJobID + '', true); /* Open the request to the Job-API. */
+		request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+		request.send(JSON.stringify(jobData)); /* Sends the JSON file to the API */
+		if (discordNotifier) {
+			const embed = new MessageBuilder()
+				.setTitle(langDiscordMessageJobCancelledTitle)
+				.setAuthor(vtcName + ' - ' + appName, discordAvatar, discordLink)
+				.setURL(discordLink)
+				.addField(':detective: Steam-User', steamUsername)
+				.addField(':triangular_flag_on_post: From', jobData.source.city + ' (' + jobData.source.company + ')')
+				.addField(':checkered_flag: To', jobData.destination.city + ' (' + jobData.destination.company + ')')
+				.addField(':beverage_box: Cargo', jobData.cargo.name)
+				.addField(':man_lifting_weights: Mass', jobData.cargo.mass)
+				.addField(':oncoming_police_car: Cargo-Damage', Math.round((jobData.cargo.damage) * 100) + '%')
+				.addField(':construction_site: Special-Job', jobData.isSpecial)
+				.setColor(discordColor)
+				.setThumbnail(discordAvatar)
+				.setDescription(langDiscordMessageJobFinished)
+				.setFooter(appName, 'https://github.com/D1strict/AL-JobTracker/')
+				.setTimestamp();
+			discordWebhook.send(embed);
+		}
+	} else {
+		notification.notify({
+			title: appName,
+			message: '' + langInfo + ':' + langJobFinishedOffline + '',
+			icon: './assets/info.png',
+			appID: vtcName,
+			sound: silentNotification
+		});
+	}
+	fs.writeFileSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtdelivered', JSON.stringify(jobData));
+	if (fs.existsSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtstarted')) {
+		fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtstarted');
+	}
+	if (fs.existsSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtcancelled')) {
+		fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtcancelled');
+	}
+});
+
+telemetry.job.on('cancelled', async function(jobData) {
+	jobStatus = false;
+	var request = new XMLHttpRequest();
+	if (typeof globalJobID === 'undefined') {
+		await generateJobID();
+	}
+	if ((await isOnline()) && (request)) {
+		request.onreadystatechange = function() {
+			if ((request.readyState === 4) && (request.status === 200)) {
+				notification.notify({
+					title: appName,
+					message: '' + langInfo + ':' + langJobCancelledOnline + '',
+					icon: './assets/info.png',
+					appID: vtcName,
+					sound: silentNotification
+				});
+				if (devmode == 1) {
+					console.log('Connection successful:\n HTTP-Status:' + request.status);
+				}
+			} else if ((request.readyState === 4) && (request.status !== 200)) {
+				notification.notify({
+					title: appName,
+					message: '' + langInfo + ':' + langJobCancelledOffline + '',
+					icon: './assets/info.png',
+					appID: vtcName,
+					sound: silentNotification
+				});
+			}
+		};
+		request.open('POST', '' + apiURL + 'job/cancel?apikey=' + apiKey + '&steamID' + steamID + '&jobID=' + globalJobID + '', true); /* Open the request to the Job-API. */
+		request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+		request.send(JSON.stringify(jobData)); /* Sends the JSON file to the API */
+		if (discordNotifier) {
+			const embed = new MessageBuilder()
+				.setTitle(langDiscordMessageJobCancelledTitle)
+				.setAuthor(vtcName + ' - ' + appName, discordAvatar, discordLink)
+				.setURL(discordLink)
+				.addField(':detective: Steam-User', steamUsername)
+				.addField(':triangular_flag_on_post: From', jobData.source.city + ' (' + jobData.source.company + ')')
+				.addField(':checkered_flag: To', jobData.destination.city + ' (' + jobData.destination.company + ')')
+				.addField(':beverage_box: Cargo', jobData.cargo.name)
+				.addField(':man_lifting_weights: Mass', jobData.cargo.mass)
+				.addField(':oncoming_police_car: Cargo-Damage', Math.round((jobData.cargo.damage) * 100) + '%')
+				.addField(':construction_site: Special-Job', jobData.isSpecial)
+				.setColor(discordColor)
+				.setThumbnail(discordAvatar)
+				.setDescription(langDiscordMessageJobCancelled)
+				.setFooter(appName, 'https://github.com/D1strict/AL-JobTracker/')
+				.setTimestamp();
+			discordWebhook.send(embed);
+		}
+	} else {
+		notification.notify({
+			title: appName,
+			message: '' + langInfo + ':' + langJobCancelledOffline + '',
+			icon: './assets/info.png',
+			appID: vtcName,
+			sound: silentNotification
+		});
+	}
+	fs.writeFileSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtcancelled', JSON.stringify(jobData));
+	if (fs.existsSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtstarted')) {
+		fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtstarted');
+	}
+	if (fs.existsSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtcancelled')) {
+		fs.unlinkSync(home + '/Documents/' + vtcName + '/jobs/' + globalJobID + '.jtcancelled');
+	}
+});
+
+telemetry.game.on('ferry', function(ferryData) {
+	if (discordNotifier) {
+		var source = ferryData.source.name;
+		var destination = ferryData.destination.name;
+		discordWebhook.send(langDiscordMessageTookFerry + ' (' + source + ' to ' + destination + ')');
+	}
+});
+
+telemetry.game.on('fine', function(fineData) {
+	if (discordNotifier) {
+		var offense = fineData.offense;
+		discordWebhook.send(langDiscordMessageFined + ' (' + offense + ')');
+	}
+});
+
+telemetry.game.on('tollgate', function(tollData) {
+	if (discordNotifier) {
+		discordWebhook.send(langDiscordMessageToll);
+	}
+});
+
+telemetry.game.on('train', function(trainData) {
+	if (discordNotifier) {
+		var source = trainData.source;
+		var destination = trainData.destination;
+		discordWebhook.send(langDiscordMessageTookTrain + ' (' + source + ' to ' + destination + ')');
+	}
+});
+
+telemetry.truck.on('damage', function(currentDamage, previousDamage) {
+	if (discordNotifier) {
+		var damage = Math.round((((currentDamage.total) * 100) - (previousDamage.total)));
+		discordWebhook.send(langDiscordMessageCollision + ' (' + damage + '%)');
+	}
+});
+
+async function generateJobID() {
+	var jobID = Math.random().toString(36).substring(7);
+	if ((fs.existsSync(home + '/Documents/' + vtcName + '/jobs/' + jobID + '.jtstarted')) || (fs.existsSync(home + '/Documents/' + vtcName + '/jobs/' + jobID + '.jtdelivered')) || (fs.existsSync(home + '/Documents/' + vtcName + '/jobs/' + jobID + '.jtcancelled'))) {
+		jobID();
+	} else {
+		var request = new XMLHttpRequest();
+		if ((await isOnline()) && (request)) {
+			request.onreadystatechange = function() {
+				if ((request.readyState == 4) && (request.status == 200) && (request.responseText !== 'success')) {
+					jobID = globalJobID;
+					return;
+				} else if ((request.readyState == 4)((request.status !== 200) || (request.responseText !== 'success'))) {
+					jobID();
+					console.log('Job ID could not be registered.');
+				}
+			};
+		}
+		request.open('POST', '' + apiURL + 'registerJID?apikey=' + apiKey + '&steamID' + steamID + '', true); /* Open the request to the Job-API. */
+		request.setRequestHeader('Content-Type', 'application/json; charset=UTF-8'); /* Sets the request header for the Job-API */
+		request.send(jobID); /* Sends the JSON file to the API */
 	}
 }
 
-etcars.on('connect', function(data) {
-	if (devmode == 1) {
-		console.log('connected');
-	}
-});
-
-etcars.on('error', function(data) {
-	if (devmode == 1) {
-		console.log('etcars error');
-	}
-});
-
-/* Systray */
 const AboutMenu = {
 	title: 'About',
 	checked: false,
@@ -540,7 +643,7 @@ const AboutMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				open('https://ace-logistics.uk');
+				open(vtcURL);
 			}
 		},
 		{
@@ -548,7 +651,7 @@ const AboutMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				open('https://discord.link/acelogisticsvtc');
+				open(supportURL);
 			}
 		},
 		{
@@ -556,7 +659,7 @@ const AboutMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				open('https://d1strict.de/legal-notice/');
+				open(legalNotice);
 			}
 		},
 		{
@@ -564,7 +667,7 @@ const AboutMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				open('https://d1strict.de/privacy-policy/');
+				open(privacyPolicy);
 			}
 		},
 		{
@@ -587,7 +690,7 @@ const JobMenu = {
 			checked: false,
 			enabled: true,
 			click: () => {
-				open('https://d1strict.de/form-user-response/10-submit-a-job/');
+				open(jobSubmitURL);
 			}
 		},
 		{
@@ -622,9 +725,9 @@ const ExitTrackerButton = {
 
 const systray = new SysTray({
 	menu: {
-		icon: 'systray.ico',
-		title: APPName,
-		tooltip: VTCName,
+		icon: './assets/systray.ico',
+		title: appName,
+		tooltip: vtcName,
 		items: [
 			JobMenu,
 			RestartTrackerButton,
@@ -633,31 +736,29 @@ const systray = new SysTray({
 		]
 	},
 	debug: false,
-	copyDir: false
+	copyDir: true
 });
 //Functions */
 function ExitApplication() {
-	notifier.notify({
-		title: APPName,
+	notification.notify({
+		title: appName,
 		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the' + APPName + ' again.',
 		icon: "./assets/warning.png",
 		timeout: 1,
-		appID: VTCName,
+		appID: vtcName,
 		sound: true,
 		id: 107,
 		wait: false
 	});
 	setTimeout(() => {
-		terminateDRP();
-		notifyIDS.forEach(notifyRemove);
 		systray.kill();
 		process.exit(1);
 	}, 1000);
 }
 
 function RestartApplication() {
-	terminateDRP();
 	setTimeout(function() {
+		systray.kill();
 		exitHook(() => {
 			require("child_process").spawn(process.argv.shift(), process.argv, {
 				cwd: process.cwd(),
@@ -665,7 +766,6 @@ function RestartApplication() {
 				stdio: "inherit"
 			});
 		});
-		notifyIDS.forEach(notifyRemove);
 		process.exit(1);
 	}, 3000);
 }
@@ -674,20 +774,4 @@ systray.onClick(action => {
 	if (action.item.click != null) {
 		action.item.click();
 	}
-});
-
-exitHook(() => {
-	notifier.notify({
-		title: APPName,
-		message: 'Warning: The tracker has been terminated. Jobs are not logged until you start the' + APPName + ' again.',
-		icon: "./assets/warning.png",
-		timeout: 1,
-		appID: VTCName,
-		sound: true,
-		id: 107,
-		wait: false
-	});
-	notifyIDS.forEach(notifyRemove);
-	terminateDRP();
-	systray.kill();
 });
