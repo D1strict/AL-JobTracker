@@ -1,4 +1,6 @@
 # Welcome to Ace Logistics - Tracker 👋
+! This product is no longer supported and has therefore been archived.
+
 ![Version](https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000)
 ![stable](https://img.shields.io/badge/stable-green.svg?cacheSeconds=2592000)
 [![Documentation](https://img.shields.io/badge/documentation-yes-brightgreen.svg)](https://docs.d1strict.de/documentation/154-ace-logistics/?l=2)
